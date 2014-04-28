@@ -21,21 +21,17 @@ namespace iBizProduct
     public class iBizBE
     {
 
-        public static NameValueCollection APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null ) 
+        public static Dictionary<string, object> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null ) 
         {
             if( Params == null ) Params = new Dictionary<string, object>();
 
-            Uri APIUri = GetAPIUri();
-            Params.Add( "session_key", HttpContext.Current.Session[ "SessionID" ].ToString() );
-            Params.Add( "account_id", HttpContext.Current.Session[ "AccountID" ].ToString() );
-            string jsonContent = JsonConvert.SerializeObject( Params );
+            string jsonContent = "";
 
-            //WebRequest webRequest = WebRequest.Create( APIUri );
-            //webRequest.Method = "POST";
-            //webRequest.ContentType = "application/json";
+            Uri APIUri = GetAPIUri();
 
             HttpWebRequest request = ( HttpWebRequest )WebRequest.Create( APIUri );
             request.Method = "POST";
+            request.ServerCertificateValidationCallback = delegate { return true; };
 
             System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
             Byte[] byteArray = encoding.GetBytes( jsonContent );
@@ -43,15 +39,18 @@ namespace iBizProduct
             request.ContentLength = byteArray.Length;
             request.ContentType = @"application/json";
 
-            using( Stream dataStream = request.GetRequestStream() )
-            {
-                dataStream.Write( byteArray, 0, byteArray.Length );
-            }
             long length = 0;
+            HttpWebResponse tmp;
             try
             {
+                using( Stream dataStream = request.GetRequestStream() )
+                {
+                    dataStream.Write( byteArray, 0, byteArray.Length );
+                }
+
                 using( HttpWebResponse response = ( HttpWebResponse )request.GetResponse() )
                 {
+                    tmp = response;
                     length = response.ContentLength;
                 }
             }
@@ -94,11 +93,12 @@ namespace iBizProduct
             {
                 // Check to see if the DevAPIHost is defined in appSettings, otherwise use a default host.
                 string DevHost = (String.IsNullOrEmpty(ConfigurationManager.AppSettings["DevAPIHost"])) ? ConfigurationManager.AppSettings["DevAPIHost"] : "backendbeta.ibizapi.com";
-                int DevPort = (String.IsNullOrEmpty(ConfigurationManager.AppSettings["DevAPIPort"])) ? int.Parse( ConfigurationManager.AppSettings["DevAPIPort"] ) : 8888;
+                int DevPort = 8888;// ( String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) ) ? int.Parse( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) : 8888;
                 return new Uri( "https://" + DevHost + ":" + DevPort );
             }
 
             return new Uri( "https://backend.ibizapi.com:8888" );
         }
+
     }
 }
