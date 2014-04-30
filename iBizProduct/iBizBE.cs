@@ -1,77 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Configuration;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
-using System.Web.SessionState;
 using Newtonsoft.Json;
-
 
 namespace iBizProduct
 {
     public class iBizBE
     {
 
-        public static NameValueCollection APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null ) 
+        public async static Task<Dictionary<string, object>> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null ) 
         {
             if( Params == null ) Params = new Dictionary<string, object>();
+            var RequestEndpoint = Endpoint + "?action=" + Action;
 
-            Uri APIUri = GetAPIUri();
-            Params.Add( "session_key", HttpContext.Current.Session[ "SessionID" ].ToString() );
-            Params.Add( "account_id", HttpContext.Current.Session[ "AccountID" ].ToString() );
-            string jsonContent = JsonConvert.SerializeObject( Params );
+            Dictionary<string, object> return_obj = new Dictionary<string, object>();
 
-            //WebRequest webRequest = WebRequest.Create( APIUri );
-            //webRequest.Method = "POST";
-            //webRequest.ContentType = "application/json";
-
-            HttpWebRequest request = ( HttpWebRequest )WebRequest.Create( APIUri );
-            request.Method = "POST";
-
-            System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
-            Byte[] byteArray = encoding.GetBytes( jsonContent );
-
-            request.ContentLength = byteArray.Length;
-            request.ContentType = @"application/json";
-
-            using( Stream dataStream = request.GetRequestStream() )
-            {
-                dataStream.Write( byteArray, 0, byteArray.Length );
-            }
-            long length = 0;
             try
             {
-                using( HttpWebResponse response = ( HttpWebResponse )request.GetResponse() )
+                using( var client = new APIClient() )
                 {
-                    length = response.ContentLength;
+                    client.BaseAddress = GetAPIUri();
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add( new MediaTypeWithQualityHeaderValue( "application/json" ) );
+
+                    // HTTP POST
+                    HttpResponseMessage response = await client.PostAsJsonAsync( RequestEndpoint, Params );
+                    //if( response.IsSuccessStatusCode )
+                    {
+                        var message = await response.Content.ReadAsStringAsync();
+                        return_obj = JsonConvert.DeserializeObject<Dictionary<string, object>>( message );
+                    }
                 }
             }
-            catch( WebException ex )
+            catch(Exception ex)
             {
-                // Get Error Message and throw an iBizException
-                WebResponse errorResponse = ex.Response;
-                using( Stream responseStream = errorResponse.GetResponseStream() )
-                {
-                    StreamReader reader = new StreamReader( responseStream, Encoding.GetEncoding( "utf-8" ) );
-                    String errorText = reader.ReadToEnd();
-                    throw new iBizException( errorText, ex.InnerException );
-                }
+                Console.WriteLine( ex.Message );
+                Console.WriteLine( ex.InnerException );
+                return_obj.Add( "Error", ex.Message );
             }
-
-            //Stream reqStream = webRequest.GetRequestStream();
             
-            //WebResponse webResponse =  webRequest.GetResponse();
+            
+            return return_obj;
 
-            return null;
         }
 
         // TODO: Implement this to provide actual, you know SECURITY!!!!!!!!!!!
@@ -88,17 +63,26 @@ namespace iBizProduct
             return true;
         }
 
+        
+
+        /// <summary>
+        /// This will give you the Uri to use for the backend. It is based on both the web.config and general defaults.
+        /// </summary>
+        /// <returns></returns>
         private static Uri GetAPIUri()
         {
-            if ( Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/.ibizdevelopers.com$" ) || HttpContext.Current.Request.IsLocal )
+            if( Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/?:^dev|\\.ibizdevelopers\\.com$" ) || HttpContext.Current.Request.IsLocal )
             {
                 // Check to see if the DevAPIHost is defined in appSettings, otherwise use a default host.
-                string DevHost = (String.IsNullOrEmpty(ConfigurationManager.AppSettings["DevAPIHost"])) ? ConfigurationManager.AppSettings["DevAPIHost"] : "backendbeta.ibizapi.com";
-                int DevPort = (String.IsNullOrEmpty(ConfigurationManager.AppSettings["DevAPIPort"])) ? int.Parse( ConfigurationManager.AppSettings["DevAPIPort"] ) : 8888;
-                return new Uri( "https://" + DevHost + ":" + DevPort );
+                string DevHost = ( String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) ) ? ConfigurationManager.AppSettings[ "DevAPIHost" ] : "backendbeta.ibizapi.com";
+                string DevPort = "8888";// ( String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) ) ? ConfigurationManager.AppSettings[ "DevAPIPort" ] : "8888";
+                string DevProtocol = ( String.Equals( DevPort, "80" ) ) ? "http://" : "https://";
+                
+                return new Uri( ( String.Equals( DevPort, "80" ) ) ? DevProtocol + DevHost : DevProtocol + DevHost + ":" + DevPort );
             }
 
             return new Uri( "https://backend.ibizapi.com:8888" );
         }
+
     }
 }

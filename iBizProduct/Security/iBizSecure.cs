@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.IO;
 
@@ -11,11 +7,10 @@ namespace iBizProduct.Security
 {
     public class iBizSecure
     {
-
         // Change these keys
-        private byte[] Key;// = { 123, 217, 19, 11, 24, 26, 85, 45, 114, 184, 27, 162, 37, 112, 222, 209, 241, 24, 175, 144, 173, 53, 196, 29, 24, 26, 17, 218, 131, 236, 53, 209 };
-        private byte[] Vector;// = { 146, 64, 191, 111, 23, 3, 113, 119, 231, 121, 2521, 112, 79, 32, 114, 156 };
-        private int Salt;// = 8;
+        private byte[] Key; // ie { 123, 217, 19, 11, 24, 26, 85, 45, 114, 184, 27, 162, 37, 112, 222, 209, 241, 24, 175, 144, 173, 53, 196, 29, 24, 26, 17, 218, 131, 236, 53, 209 };
+        private byte[] Vector; // ie { 146, 64, 191, 111, 23, 3, 113, 119, 231, 121, 2521, 112, 79, 32, 114, 156 };
+        private int Salt; 
 
         private ICryptoTransform EncryptorTransform, DecryptorTransform;
         private System.Text.UTF8Encoding UTFEncoder;
