@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) iBizVision - 2014
+// Author: Dan Siegel
+
+using System;
 
 namespace iBizProduct.Logging
 {

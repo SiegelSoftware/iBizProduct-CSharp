@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) iBizVision - 2014
+// Author: Dan Siegel
+
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net.Http;
@@ -7,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Newtonsoft.Json;
+using iBizProduct.Http;
 
 namespace iBizProduct
 {
