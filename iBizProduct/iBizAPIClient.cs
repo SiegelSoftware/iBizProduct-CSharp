@@ -4,10 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using iBizProduct.DataContracts;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Utilities;
 
 namespace iBizProduct
 {
@@ -23,22 +28,26 @@ namespace iBizProduct
         #region CommerceManager/ProductManager/ProductOrder
 
         /// <summary>
-        /// Add a new product order to the panel.
+        /// Add a new product order to the panel. You should use this when creating a new order such as when a customer
+        /// clicks "Add to Cart" or "Checkout" on the PurchaseAdd page of the Panel.
         /// </summary>
-        /// <param name="ProductId">The ID of the product you are trying to add a purchase order for</param>
         /// <param name="ProductOrderSpec">An associative array of the specifications that Panel will be tracking</param>
         /// <returns>The ProductOrder ID of the added Product Order.</returns>
-        public static int ProductOrderAdd( string ProductId, ProductOrderSpec ProductOrderSpec )
+        public static int ProductOrderAdd( ProductOrderSpec ProductOrderSpec )
         {
             VerifyExternalKey();
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
-                { "product_id", ProductId },
-                { "productorder_spec", ProductOrderSpec }
+                { "product_id", ConfigurationManager.AppSettings[ "ProductId"] },
+                { "productorder_spec", ProductOrderSpec.OrderSpec() }
             };
 
+
+
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalAdd", Params ).Result;
+
+            if( result.ContainsKey( "error" ) ) throw new iBizException( result[ "error" ].ToString() );
 
             return int.Parse( result[ "productorder_id" ].ToString() );
         }
@@ -55,7 +64,8 @@ namespace iBizProduct
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
-                { "productorder_id", ProductOrderId }
+                { "productorder_id", ProductOrderId },
+                { "productorder_spec", productOrderSpec.OrderSpec() }
             };
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params ).Result;
@@ -96,7 +106,8 @@ namespace iBizProduct
         */
 
         /// <summary>
-        /// 
+        /// This will instruct the Panel to make a one time charge to a client. This could be due to a customer modifying the terms of 
+        /// their services with your product or an On Demand payment.
         /// </summary>
         /// <param name="CycleBeginData"></param>
         /// <param name="CycleEndDate"></param>
@@ -106,7 +117,7 @@ namespace iBizProduct
         /// <param name="DescriptionAddOn"></param>
         /// <param name="DueNow"></param>
         /// <returns>BillResponse Enum Value</returns>
-        public static BillResponse ProductOrderBillOrderAddOneTime( int CycleBeginData, int CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, int DueNow = -999 ) // On Demand Billing
+        public static BillResponse ProductOrderBillOrderAddOneTime( DateTime CycleBeginData, DateTime CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, bool DueNow = true ) 
         {
             VerifyExternalKey();
 
@@ -120,7 +131,7 @@ namespace iBizProduct
 
             if( DetailAddon != null ) Params.Add( "detail_addon", DetailAddon );
             if( DescriptionAddOn != null ) Params.Add( "description_addon", DescriptionAddOn );
-            if( DueNow != -999 ) Params.Add( "due_now", DueNow );
+            Params.Add( "due_now", ( ( DueNow == true ) ? 1 : 0 ).ToString() );
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params ).Result;
 
