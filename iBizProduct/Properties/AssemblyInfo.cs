@@ -7,11 +7,11 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("iBizProduct")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("The generic class library used by any iBizProduct written with .NET")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany( "iBizVision" )]
 [assembly: AssemblyProduct("iBizProduct")]
-[assembly: AssemblyCopyright("Copyright ©  2014")]
+[assembly: AssemblyCopyright("Copyright © iBizVision 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

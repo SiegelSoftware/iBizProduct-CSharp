@@ -16,7 +16,7 @@ using iBizProduct.Http;
 namespace iBizProduct
 {
 
-    protected internal class iBizBE
+    internal class iBizBE
     {
         private const string ProductionAPI = @"https://backend.ibizapi.com:8888";
         private const string StagingAPI = @"https://backendbeta.ibizapi.com:8888";
@@ -94,7 +94,7 @@ namespace iBizProduct
         /// <returns>iBizAPI server Uri</returns>
         private static Uri GetAPIUri()
         {
-            if( Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/?:^dev|\\.ibizdevelopers\\.com$" ) || HttpContext.Current.Request.IsLocal )
+            if( bool.Parse( ConfigurationManager.AppSettings[ "IsDev" ] ) == true || HttpContext.Current.Request.IsLocal || Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/?:^dev|\\.ibizdevelopers\\.com$" ) ) 
             {
                 // Check to see if the DevAPIHost is defined in appSettings, otherwise use a default host.
                 string DevHost = ( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) ) ? Environment.GetEnvironmentVariable( "DevAPIHost" ) : ( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) ) ? ConfigurationManager.AppSettings[ "DevAPIHost" ] : "backendbeta.ibizapi.com";

@@ -146,6 +146,7 @@
     <Compile Include="Security\iBizSecure.cs" />
     <Compile Include="Threading\Tasks\TaskHelpers.cs" />
     <Compile Include="Threading\Tasks\TaskHelpersExtensions.cs" />
+    <Compile Include="UnixTime.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

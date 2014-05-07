@@ -11,9 +11,17 @@ using Newtonsoft.Json.Serialization;
 
 namespace iBizProduct.DataContracts
 {
+    /// <summary>
+    /// The ProductOrderSpec is used to define different attributes about a ProductOrder.
+    /// </summary>
     public class ProductOrderSpec
     {
-        private Dictionary<string, string> POSpec = new Dictionary<string, string>();
+        private Dictionary<string, object> POSpec = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Instatiate a new ProductOrderSpec. You will need to set the attributes you wish to use. 
+        /// </summary>
+        public ProductOrderSpec() { }
 
         public string ProductOrderName { get; set; }
 
@@ -23,29 +31,44 @@ namespace iBizProduct.DataContracts
         /// <remarks>
         /// If you want dynamic billing, you may not want to use this or set it to 0
         /// </remarks>
-        public decimal Cost { get; set; }
+        public decimal? Cost { get; set; }
 
         /// <summary>
         /// This will create a one time charge for setting up your product.
         /// </summary>
-        public decimal Setup { get; set; }
+        public decimal? Setup { get; set; }
 
         /// <summary>
         /// The current status of the Order. i.e. Incomplete, Complete, In Progress
         /// </summary>
-        public ProductOrderStatus ProductOrderStatus { get; set; }
+        public ProductOrderStatus? ProductOrderStatus { get; set; }
 
         /// <summary>
         /// Enter any notes related to your productorder
         /// </summary>
         public string Notes { get; set; }
-        
+
+        /// <summary>
+        /// This provides functionality to add custom attributes to the Associative Array
+        /// that is built to pass to the Backend API. 
+        /// </summary>
+        /// <remarks>
+        /// You should only use this if you know what you are doing.
+        /// </remarks>
+        /// <param name="key">Key of the Associative Array to be passed to the Backend API</param>
+        /// <param name="value">Value of the Associative Array to be passed to the Backend API</param>
+        /// <returns></returns>
+        public bool AddCustomAttribute( string key, object value )
+        {
+            POSpec.Add( key, value );
+            return true;
+        }
 
         /// <summary>
         /// The Order Specifications that have been defined.
         /// </summary>
         /// <returns>Dictionary<string,string> of the specifications</returns>
-        public Dictionary<string,string> OrderSpec()
+        public Dictionary<string,object> OrderSpec()
         {
             if( ProductOrderName != null )
                 POSpec.Add( "productorder_name", ProductOrderName );

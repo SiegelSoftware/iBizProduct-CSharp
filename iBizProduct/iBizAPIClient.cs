@@ -25,6 +25,8 @@ namespace iBizProduct
     /// </summary>
     public class iBizAPIClient
     {
+        private static string ExternalKey;
+
         #region CommerceManager/ProductManager/ProductOrder
 
         /// <summary>
@@ -33,13 +35,29 @@ namespace iBizProduct
         /// </summary>
         /// <param name="ProductOrderSpec">An associative array of the specifications that Panel will be tracking</param>
         /// <returns>The ProductOrder ID of the added Product Order.</returns>
-        public static int ProductOrderAdd( ProductOrderSpec ProductOrderSpec )
+        public static int ProductOrderAdd( ProductOrderSpec ProductOrderSpec, int? ProductId = null  )
         {
             VerifyExternalKey();
 
+            if ( ProductId == null )
+            {
+                try
+                {
+                    ProductId = int.Parse( Environment.GetEnvironmentVariable( "ProductId" ) );
+
+                    if( ProductId == null ) 
+                        ProductId = int.Parse( ConfigurationManager.AppSettings[ "ProductId" ] );
+                }
+                catch (Exception)
+                {
+                    throw new iBizException( "We seem to be having some trouble finding your Product Id. Please make sure that this is available in your Environment or AppSettings." );
+                }
+
+            }
+
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
-                { "product_id", ConfigurationManager.AppSettings[ "ProductId"] },
+                { "external_key", ExternalKey },
+                { "product_id", ProductId },
                 { "productorder_spec", ProductOrderSpec.OrderSpec() }
             };
 
@@ -58,46 +76,55 @@ namespace iBizProduct
         /// <param name="ProductOrderId">The ProductOrder Id of the Product Order you wish to edit.</param>
         /// <param name="productOrderSpec">The Specifications that need to change.</param>
         /// <returns>A boolean indicating whether or not the edit was successful.</returns>
-        public static bool ProductOrderEdit( string ProductOrderId, ProductOrderSpec productOrderSpec )
+        public static bool ProductOrderEdit( int ProductOrderId, ProductOrderSpec productOrderSpec )
         {
             VerifyExternalKey();
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
+                { "external_key", ExternalKey },
                 { "productorder_id", ProductOrderId },
                 { "productorder_spec", productOrderSpec.OrderSpec() }
             };
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params ).Result;
+            var success = 0;
+            result[ "success" ].ToString();
 
-            return ( bool )result[ "success" ];
+            int.TryParse( result[ "success" ].ToString(), out success );
+
+            return success == 1; // If the value is 1 then we will return true.
         }
 
         /// <summary>
-        /// Returns a ProductOrder Sub Spec as a Dictionary<string, object> for the specified Product Order.
+        /// Used for Viewing information about a particular Purchase Order.
         /// </summary>
-        /// <param name="ProductOrderId"></param>
-        /// <param name="InfoToReturn"></param>
-        /// <returns></returns>
-        public static Dictionary<string, object> ProductOrderView( string ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
+        /// <param name="ProductOrderId">Product Order ID</param>
+        /// <param name="InfoToReturn">Optional ProductOfferInfoToReturn</param>
+        /// <returns>Dictionary&lt;string, object&gt; with the requested View Object</returns>
+        public static Dictionary<string, object> ProductOrderView( int ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
         {
             VerifyExternalKey();
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
+                { "external_key", ExternalKey },
                 { "productorder_id", ProductOrderId },
-                { "info_to_return", InfoToReturn }
             };
 
-            return iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
+            if( InfoToReturn != null ) Params.Add( "info_to_return", InfoToReturn );
+
+            var view = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
+            return view;
         }
 
-        /* We won't be using this function for the moment. We will be implementing this at a later date.
+        /* 
+         * We won't be using this function for the moment.
+         * We will be implementing this at a later date.
+         * 
         // TODO: Create correct Paramater List
         public static Dictionary<string, object> ProductOrderUpdateInventory( string ProductOrderId ) 
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
+                { "external_key", ExternalKey },
                 { "productorder_id", ProductOrderId }
             };
 
@@ -122,10 +149,10 @@ namespace iBizProduct
             VerifyExternalKey();
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
+                { "external_key", ExternalKey },
                 { "productorder_id", ProductOrderId },
-                { "cycle_begin_date", CycleBeginData },
-                { "cycle_end_date", CycleEndDate },
+                { "cycle_begin_date", UnixTime.GetUnixTime( CycleBeginData ) },
+                { "cycle_end_date", UnixTime.GetUnixTime( CycleEndDate ) },
                 { "one_time_cost", OneTimeCost }
             };
 
@@ -134,8 +161,9 @@ namespace iBizProduct
             Params.Add( "due_now", ( ( DueNow == true ) ? 1 : 0 ).ToString() );
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params ).Result;
+            var ResponseCode = int.Parse( result[ "response_code" ].ToString() );
 
-            return ( BillResponse )Enum.Parse( typeof( BillResponse ), result[ "response_code" ].ToString() );
+            return ( BillResponse )ResponseCode;
         }
 
         #endregion
@@ -149,7 +177,7 @@ namespace iBizProduct
         /// <param name="AccountHost">Your account host</param>
         /// <param name="AccountId"></param>
         /// <returns></returns>
-        public static Dictionary<string, object> ProductOfferPrice( string ProductOfferId, string AccountHost, string AccountId = null ) // Used for getting the offer chain
+        public static Dictionary<string, object> ProductOfferPrice( int ProductOfferId, string AccountHost, int? AccountId = null ) // Used for getting the offer chain
         {
             VerifyExternalKey();
 
@@ -220,7 +248,12 @@ namespace iBizProduct
         /// <returns>True if a value exists for the External Key</returns>
         public static bool ExternalKeyExists()
         {
-            return ConfigurationManager.AppSettings[ "ExternalKey" ].Length > 0;
+            ExternalKey = Environment.GetEnvironmentVariable( "ExternalKey" );
+
+            if ( String.IsNullOrEmpty( ExternalKey ) )
+                ExternalKey = ConfigurationManager.AppSettings[ "ExternalKey" ];
+
+            return !String.IsNullOrEmpty( ExternalKey );
         }
 
         /// <summary>
