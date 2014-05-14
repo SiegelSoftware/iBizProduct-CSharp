@@ -4,15 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Runtime.InteropServices;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using iBizProduct.DataContracts;
-using Newtonsoft.Json.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Utilities;
 
 namespace iBizProduct
 {
