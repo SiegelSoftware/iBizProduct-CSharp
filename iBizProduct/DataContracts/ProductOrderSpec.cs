@@ -1,13 +1,7 @@
 ﻿// Copyright (c) iBizVision - 2014
 // Author: Dan Siegel
 
-using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Serialization;
 
 namespace iBizProduct.DataContracts
 {

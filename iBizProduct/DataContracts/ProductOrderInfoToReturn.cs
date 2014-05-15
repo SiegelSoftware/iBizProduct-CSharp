@@ -1,12 +1,6 @@
 ﻿// Copyright (c) iBizVision - 2014
 // Author: Dan Siegel
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace iBizProduct.DataContracts
 {
