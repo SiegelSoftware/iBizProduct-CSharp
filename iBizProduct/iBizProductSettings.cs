@@ -52,6 +52,31 @@ namespace iBizProduct
             return ConfigSalt;
         }
 
+        public static int ProductId()
+        {
+            int ProductId;
+
+            if( !int.TryParse( Environment.GetEnvironmentVariable( "ProductId" ), out ProductId ) )
+            {
+                if ( !int.TryParse( ConfigurationManager.AppSettings[ "ProductId" ], out ProductId ) )
+                {
+                    throw new iBizException( "We seem to be having some trouble finding your Product Id. Please make sure that this is available in your Environment or AppSettings." );
+                }
+            }
+
+            return ProductId;
+        }
+
+        public static string ExternalKey()
+        {
+            string ExternalKey = Environment.GetEnvironmentVariable( "ExternalKey" );
+
+            if( String.IsNullOrEmpty( ExternalKey ) )
+                ExternalKey = ConfigurationManager.AppSettings[ "ExternalKey" ];
+
+            return ExternalKey;
+        }
+
         public static void AddSetting( string name, string value )
         {
             Settings.Add( name, value );

@@ -19,7 +19,7 @@ namespace iBizProduct
     /// </summary>
     public class iBizAPIClient
     {
-        private static string ExternalKey;
+        private static string ExternalKey = iBizProductSettings.ExternalKey();
 
         #region CommerceManager/ProductManager/ProductOrder
 
@@ -35,18 +35,7 @@ namespace iBizProduct
 
             if ( ProductId == null )
             {
-                try
-                {
-                    ProductId = int.Parse( Environment.GetEnvironmentVariable( "ProductId" ) );
-
-                    if( ProductId == null ) 
-                        ProductId = int.Parse( ConfigurationManager.AppSettings[ "ProductId" ] );
-                }
-                catch (Exception)
-                {
-                    throw new iBizException( "We seem to be having some trouble finding your Product Id. Please make sure that this is available in your Environment or AppSettings." );
-                }
-
+                ProductId = iBizProductSettings.ProductId();
             }
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
@@ -54,8 +43,6 @@ namespace iBizProduct
                 { "product_id", ProductId },
                 { "productorder_spec", ProductOrderSpec.OrderSpec() }
             };
-
-
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalAdd", Params ).Result;
 
@@ -197,7 +184,7 @@ namespace iBizProduct
         public static Dictionary<string, object> LedgerEntryManagerProrate( string ProductOfferId, string AccountHost, string AccountId )
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
+                { "external_key", iBizProductSettings.ExternalKey() },
                 { "account_id", AccountId },
                 { "account_host", AccountHost },
                 { "productoffer_id", ProductOfferId }
@@ -224,7 +211,7 @@ namespace iBizProduct
         public static Dictionary<string, object> ProductOrderUpdateEvent( string ProductOfferId, string AccountHost, string AccountId ) // Update Event Que
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ConfigurationManager.AppSettings[ "ExternalKey" ] },
+                { "external_key", iBizProductSettings.ExternalKey() },
                 { "account_id", AccountId },
                 { "account_host", AccountHost },
                 { "productoffer_id", ProductOfferId }
@@ -270,7 +257,7 @@ namespace iBizProduct
 
         public static bool IsValidBackendRequest( string ExternalKey )
         {
-            return ExternalKey == GetExternalKey();
+            return ExternalKey == iBizProductSettings.ExternalKey();
         }
 
         /// <summary>
@@ -280,18 +267,9 @@ namespace iBizProduct
         /// <returns>True if a value exists for the External Key</returns>
         public static bool ExternalKeyExists()
         {
-            return !String.IsNullOrEmpty( GetExternalKey() );
+            return !String.IsNullOrEmpty( iBizProductSettings.ExternalKey() );
         }
 
-        private static string GetExternalKey()
-        {
-            ExternalKey = Environment.GetEnvironmentVariable( "ExternalKey" );
-
-            if( String.IsNullOrEmpty( ExternalKey ) )
-                ExternalKey = ConfigurationManager.AppSettings[ "ExternalKey" ];
-
-            return ExternalKey;
-        }
 
         /// <summary>
         /// This method should be called before attempting to connect to the Backend Services. If you do not have 
