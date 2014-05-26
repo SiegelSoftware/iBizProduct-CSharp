@@ -11,8 +11,8 @@ namespace iBizProduct.Security
     public class iBizSecure
     {
         // Change these keys
-        private byte[] Key; // ie { 123, 217, 19, 11, 24, 26, 85, 45, 114, 184, 27, 162, 37, 112, 222, 209, 241, 24, 175, 144, 173, 53, 196, 29, 24, 26, 17, 218, 131, 236, 53, 209 };
-        private byte[] Vector; // ie { 146, 64, 191, 111, 23, 3, 113, 119, 231, 121, 2521, 112, 79, 32, 114, 156 };
+        private byte[] Key; 
+        private byte[] Vector; 
         private int Salt; 
 
         private ICryptoTransform EncryptorTransform, DecryptorTransform;
@@ -60,11 +60,13 @@ namespace iBizProduct.Security
         }
 
         /// Encrypt some text and return an encrypted byte array.
-        public byte[] Encrypt(string TextValue)
+        public byte[] Encrypt( string TextValue, int userDefineSalt = 0 )
         {
             //Translates our text value into a byte array.
             Byte[] pepper = UTFEncoder.GetBytes(TextValue);
-            // add salt
+
+            if( userDefineSalt != 0 ) Salt = userDefineSalt;
+            
             Byte[] salt = new byte[Salt];
             RNGCryptoServiceProvider crypto = new RNGCryptoServiceProvider();
             crypto.GetNonZeroBytes(salt);
@@ -106,9 +108,16 @@ namespace iBizProduct.Security
             return (EncryptedString != "") ? Decrypt(Convert.FromBase64String(EncryptedString)) : "";
         }
 
-        /// Decryption when working with byte arrays.    
-        public string Decrypt(byte[] EncryptedValue)
+        public string Decrypt( string EncryptedValue, string userDefinedSalt = "0" )
         {
+            return Decrypt( GetBytes( EncryptedValue ), int.Parse( userDefinedSalt ) );
+        }
+
+        /// Decryption when working with byte arrays.    
+        public string Decrypt( byte[] EncryptedValue, int userDefineSalt = 0 )
+        {
+            if( userDefineSalt != 0 ) Salt = userDefineSalt;
+
             #region Write the encrypted value to the decryption stream
             MemoryStream encryptedStream = new MemoryStream();
             CryptoStream decryptStream = new CryptoStream(encryptedStream, DecryptorTransform, CryptoStreamMode.Write);
@@ -129,20 +138,30 @@ namespace iBizProduct.Security
             return UTFEncoder.GetString(pepper);
         }
 
+        public int GenerateSalt()
+        {
+            Random rnd = new Random();
+            return rnd.Next( 1000000, 2147483647 );
+        }
+
         private void LoadKeys()
         {
-            var AppConfigKey = ConfigurationManager.AppSettings["ConfigKey"].ToString();
-            var AppConfigVector = ConfigurationManager.AppSettings["ConfigVector"].ToString();
-            var AppConfigSalt = ConfigurationManager.AppSettings["ConfigSalt"].ToString();
-
-            if( AppConfigKey == null || AppConfigVector == null || AppConfigSalt == null )
+            try
             {
-                NewKeys();
+                this.Key = Convert.FromBase64String( iBizProductSettings.ConfigKey() );
+                this.Vector = Convert.FromBase64String( iBizProductSettings.ConfigVector() );
+                this.Salt = BitConverter.ToInt32( Convert.FromBase64String( iBizProductSettings.ConfigSalt() ), 0 );
             }
+            catch(iBizException)
+            {
+                // If any of the values above did not exist they will throw an iBizException. We will generate new values for the Config Manager
+                NewKeys();
 
-            this.Key = Convert.FromBase64String( AppConfigKey );
-            this.Vector = Convert.FromBase64String( AppConfigVector );
-            this.Salt = BitConverter.ToInt32( Convert.FromBase64String( AppConfigSalt ), 0 );
+                // Thought about doing this recursively... but the possibility for an inifite loop didn't seem worth it.
+                this.Key = Convert.FromBase64String( iBizProductSettings.ConfigKey() );
+                this.Vector = Convert.FromBase64String( iBizProductSettings.ConfigVector() );
+                this.Salt = BitConverter.ToInt32( Convert.FromBase64String( iBizProductSettings.ConfigSalt() ), 0 );
+            }
         }
 
         /// <summary>
@@ -175,6 +194,13 @@ namespace iBizProduct.Security
             }
 
             return wasSuccessful;
+        }
+
+        private byte[] GetBytes( string str )
+        {
+            byte[] bytes = new byte[ str.Length * sizeof( char ) ];
+            System.Buffer.BlockCopy( str.ToCharArray(), 0, bytes, 0, bytes.Length );
+            return bytes;
         }
     }
 }

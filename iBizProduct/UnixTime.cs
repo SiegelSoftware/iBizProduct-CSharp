@@ -4,7 +4,7 @@ namespace iBizProduct
 {
     public class UnixTime
     {
-        private DateTime EPOC = new DateTime( 1970, 1, 1, 0, 0, 0 );
+        static DateTime EPOC = new DateTime( 1970, 1, 1, 0, 0, 0 );
         private DateTime ThisTime;
 
         public UnixTime()
@@ -33,11 +33,15 @@ namespace iBizProduct
             return ( long )timeSpan.TotalSeconds;
         }
 
-        public static long GetUnixTime(DateTime datetime)
+        public static long ConvertToUnixTime( DateTime datetime )
         {
-            DateTime EPOC = new DateTime( 1970, 1, 1, 0, 0, 0 );
-            var timeSpan = ( datetime - EPOC );
-            return ( long )timeSpan.TotalSeconds;
+            return ( long )( datetime - EPOC ).TotalSeconds;
+        }
+
+        public static DateTime ConvertFromUnixTime( long UnixTimeStamp )
+        {
+            // Unix timestamp is seconds past epoch
+            return EPOC.AddSeconds( UnixTimeStamp ).ToLocalTime();
         }
     }
 }

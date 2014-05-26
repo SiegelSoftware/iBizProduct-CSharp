@@ -5,7 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
-namespace iBizProduct.Logging
+namespace iBizProduct.Ultilities
 {
     public class Logger : ILogger
     {

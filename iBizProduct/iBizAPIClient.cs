@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Web;
+using System.Web.SessionState;
 using iBizProduct.DataContracts;
 
 namespace iBizProduct
@@ -143,8 +145,8 @@ namespace iBizProduct
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ExternalKey },
                 { "productorder_id", ProductOrderId },
-                { "cycle_begin_date", UnixTime.GetUnixTime( CycleBeginData ) },
-                { "cycle_end_date", UnixTime.GetUnixTime( CycleEndDate ) },
+                { "cycle_begin_date", UnixTime.ConvertToUnixTime( CycleBeginData ) },
+                { "cycle_end_date", UnixTime.ConvertToUnixTime( CycleEndDate ) },
                 { "one_time_cost", OneTimeCost }
             };
 
@@ -234,18 +236,61 @@ namespace iBizProduct
         #endregion
 
         /// <summary>
+        /// This method sets the ProductAuthentication variables to the Session for the Product to be able to track
+        /// and handle. It also verifies that the session the user has is valid.
+        /// </summary>
+        /// <param name="authentication">Authentication Paramaters</param>
+        /// <returns>Boolean to indicate a valid session</returns>
+        public static bool AuthenticateUser( ProductAuthentication authentication )
+        {
+            //if( HttpContext.Current.Session["Token"] != null )
+            {
+                // Check the SessionID Passed and validate that you have a valid Panel session
+                Dictionary<string, object> Params = new Dictionary<string, object>()
+                {
+                    { "session_id", authentication.SessionID }
+                };
+
+                //var VerifyAccount = iBizBE.APICall( "JSON/AccountManager/AAA", "ViewAccountID", Params );
+
+                // We only load MyAccountID and the Token here. NOTE: We do not want to track the Panel Session ID.
+                // This would encourage developers to use non-external calls beyond what we are making here.
+                HttpContext.Current.Session[ "MyAccountID" ] = authentication.MyAccountID;
+                HttpContext.Current.Session[ "Token" ] = Convert.ToBase64String( Guid.NewGuid().ToByteArray() );
+            }
+
+            // We will always load the follow here as they may have changed.
+            HttpContext.Current.Session.Add( "AccountID", authentication.AccountID );
+            HttpContext.Current.Session.Add( "ProductOrderID", authentication.ProductOrderID );
+            HttpContext.Current.Session.Add( "OfferID", authentication.OfferID );
+            HttpContext.Current.Session.Add( "Language", authentication.Language );
+
+            return true;
+        }
+
+        public static bool IsValidBackendRequest( string ExternalKey )
+        {
+            return ExternalKey == GetExternalKey();
+        }
+
+        /// <summary>
         /// This will verify that you have an External Key set in your AppSettings. If it does not exist 
         /// the Client will not be able to authenticate against the iBizAPI.
         /// </summary>
         /// <returns>True if a value exists for the External Key</returns>
         public static bool ExternalKeyExists()
         {
+            return !String.IsNullOrEmpty( GetExternalKey() );
+        }
+
+        private static string GetExternalKey()
+        {
             ExternalKey = Environment.GetEnvironmentVariable( "ExternalKey" );
 
-            if ( String.IsNullOrEmpty( ExternalKey ) )
+            if( String.IsNullOrEmpty( ExternalKey ) )
                 ExternalKey = ConfigurationManager.AppSettings[ "ExternalKey" ];
 
-            return !String.IsNullOrEmpty( ExternalKey );
+            return ExternalKey;
         }
 
         /// <summary>

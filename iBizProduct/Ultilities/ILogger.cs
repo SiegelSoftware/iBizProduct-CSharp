@@ -3,7 +3,7 @@
 
 using System;
 
-namespace iBizProduct.Logging
+namespace iBizProduct.Ultilities
 {
     public interface ILogger
     {

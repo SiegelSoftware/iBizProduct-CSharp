@@ -67,19 +67,7 @@ namespace iBizProduct
         }
 
 
-        // TODO: Implement this to provide actual, you know SECURITY!!!!!!!!!!!
-        public static bool AuthenticateUser( string SessionID, int AccountID, int ProductOrderID )
-        {
-            if ( HttpContext.Current.Session.SessionID == null )
-            {
-                HttpContext.Current.Session.Add( "SessionID", SessionID );
-                HttpContext.Current.Session.Add( "AccountID", AccountID );
-                HttpContext.Current.Session.Add( "ProductOrderID", ProductOrderID );
-                HttpContext.Current.Session.Add( "Token", Convert.ToBase64String( Guid.NewGuid().ToByteArray() ) );
-            }
-
-            return true;
-        }
+        
 
         
 

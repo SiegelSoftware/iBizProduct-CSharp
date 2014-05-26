@@ -71,18 +71,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataContracts\BillResponse.cs" />
+    <Compile Include="DataContracts\ProductAuthentication.cs" />
     <Compile Include="Http\APIClient.cs" />
     <Compile Include="iBizAPIClient.cs" />
     <Compile Include="iBizBE.cs" />
     <Compile Include="iBizException.cs" />
     <Compile Include="DataContracts\InfoToReturn.cs" />
-    <Compile Include="Logging\ILogger.cs" />
-    <Compile Include="Logging\Logger.cs" />
     <Compile Include="DataContracts\ProductOrderInfoToReturn.cs" />
     <Compile Include="DataContracts\ProductOrderSpec.cs" />
     <Compile Include="DataContracts\ProductOrderStatus.cs" />
+    <Compile Include="iBizProductSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Security\iBizSecure.cs" />
+    <Compile Include="Ultilities\iBizLog.cs" />
+    <Compile Include="Ultilities\iBizSecure.cs" />
+    <Compile Include="Ultilities\ILogger.cs" />
+    <Compile Include="Ultilities\Logger.cs" />
+    <Compile Include="Ultilities\StringExtensions.cs" />
     <Compile Include="UnixTime.cs" />
   </ItemGroup>
   <ItemGroup>
