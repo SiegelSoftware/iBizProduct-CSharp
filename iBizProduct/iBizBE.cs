@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using iBizProduct.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace iBizProduct
 {
@@ -21,54 +21,49 @@ namespace iBizProduct
         private const string ProductionAPI = @"https://backend.ibizapi.com:8888";
         private const string StagingAPI = @"https://backendbeta.ibizapi.com:8888";
 
-        public async static Task<Dictionary<string, object>> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null ) 
+        public async static Task<JObject> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null )
         {
             if( Params == null ) Params = new Dictionary<string, object>();
             var RequestEndpoint = Endpoint + "?action=" + Action;
 
-            Dictionary<string, object> return_obj = new Dictionary<string, object>();
+            JObject return_obj = new JObject();
 
             string JsonSerializedParams = JsonConvert.SerializeObject( Params );
-            Console.WriteLine( JsonSerializedParams );
-            Console.WriteLine( "" );
 
             try
             {
+
                 using( var handler = new WebRequestHandler() )
                 {
+#if DEBUG
+                    // This is only needed due to the fact that the staging API does not have a valid certificate.
                     handler.ServerCertificateValidationCallback = ( sender, cert, chain, sslPolicyErrors ) => true;
+#endif
                     using( var client = new APIClient( handler ) )
                     {
                         client.BaseAddress = GetAPIUri();
                         client.DefaultRequestHeaders.Accept.Clear();
-                        client.DefaultRequestHeaders.Accept.Add( new MediaTypeWithQualityHeaderValue( "application/json" ) );
+                        //client.DefaultRequestHeaders.Accept.Add( new MediaTypeWithQualityHeaderValue( "application/json" ) );
 
-                        using( HttpResponseMessage response = await client.PostAsync( RequestEndpoint, new StringContent( JsonSerializedParams, Encoding.UTF8, "application/json" ) ) )
+                        using( HttpResponseMessage response = await client.PostAsync( RequestEndpoint, new StringContent( JsonSerializedParams, Encoding.UTF8, "application/json" ) ).ConfigureAwait( false ) )
                         using( HttpContent content = response.Content )
                         {
                             // ... Read the string.
                             string result = await content.ReadAsStringAsync();
-                            return_obj = JsonConvert.DeserializeObject<Dictionary<string, object>>( result );
+                            return_obj = JsonConvert.DeserializeObject<JObject>( result );
                         }
                     }
                 }
             }
-            catch(Exception ex)
+            catch( Exception ex )
             {
-                Console.WriteLine( "An error occured while making the API Call" );
-                Console.WriteLine( ex.Message );
-                Console.WriteLine( ex.InnerException );
                 return_obj.Add( "error", ex.Message );
             }
-            
-            
+
+
             return return_obj;
 
         }
-
-
-        
-
         
 
         /// <summary>
@@ -82,6 +77,8 @@ namespace iBizProduct
         /// <returns>iBizAPI server Uri</returns>
         private static Uri GetAPIUri()
         {
+#if DEBUG
+            // When running this code as a release it will not look for the stage API.
             if( bool.Parse( ConfigurationManager.AppSettings[ "IsDev" ] ) == true || HttpContext.Current.Request.IsLocal || Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/?:^dev|\\.ibizdevelopers\\.com$" ) ) 
             {
                 // Check to see if the DevAPIHost is defined in appSettings, otherwise use a default host.
@@ -94,7 +91,11 @@ namespace iBizProduct
                 return new Uri( ( String.Equals( DevPort, "80" ) ) ? DevProtocol + DevHost : DevProtocol + DevHost + ":" + DevPort );
             }
 
+            // If we are debugging we will go ahead and use the Staging API if we got to this point.
+            return new Uri( StagingAPI );
+#else
             return new Uri( ProductionAPI );
+#endif
         }
 
     }

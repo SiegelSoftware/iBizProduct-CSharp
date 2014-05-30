@@ -7,6 +7,7 @@ using System.Configuration;
 using System.Web;
 using System.Web.SessionState;
 using iBizProduct.DataContracts;
+using Newtonsoft.Json.Linq;
 
 namespace iBizProduct
 {
@@ -46,7 +47,7 @@ namespace iBizProduct
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalAdd", Params ).Result;
 
-            if( result.ContainsKey( "error" ) ) throw new iBizException( result[ "error" ].ToString() );
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
 
             return int.Parse( result[ "productorder_id" ].ToString() );
         }
@@ -82,7 +83,7 @@ namespace iBizProduct
         /// <param name="ProductOrderId">Product Order ID</param>
         /// <param name="InfoToReturn">Optional ProductOfferInfoToReturn</param>
         /// <returns>Dictionary&lt;string, object&gt; with the requested View Object</returns>
-        public static Dictionary<string, object> ProductOrderView( int ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
+        public static JObject ProductOrderView( int ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
         {
             VerifyExternalKey();
 
@@ -158,7 +159,7 @@ namespace iBizProduct
         /// <param name="AccountHost">Your account host</param>
         /// <param name="AccountId"></param>
         /// <returns></returns>
-        public static Dictionary<string, object> ProductOfferPrice( int ProductOfferId, string AccountHost, int? AccountId = null ) // Used for getting the offer chain
+        public static JObject ProductOfferPrice( int ProductOfferId, string AccountHost, int? AccountId = null ) // Used for getting the offer chain
         {
             VerifyExternalKey();
 
@@ -208,7 +209,7 @@ namespace iBizProduct
         #region CommerceManager/ProductManager/ProductOrder/Event
 
         // TODO: Create correct Paramater List
-        public static Dictionary<string, object> ProductOrderUpdateEvent( string ProductOfferId, string AccountHost, string AccountId ) // Update Event Que
+        public static JObject ProductOrderUpdateEvent( string ProductOfferId, string AccountHost, string AccountId ) // Update Event Que
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", iBizProductSettings.ExternalKey() },

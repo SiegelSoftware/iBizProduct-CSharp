@@ -5,6 +5,7 @@ using System;
 
 namespace iBizProduct
 {
+    [Serializable]
     public class iBizException : Exception
     {
         public iBizException() { }
