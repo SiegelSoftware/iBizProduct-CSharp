@@ -28,5 +28,10 @@ namespace iBizProduct.Ultilities
         {
             return string.Format( CultureInfo.InvariantCulture, format, args );
         }
+
+        public static string UppercaseFirst( this string String )
+        {
+            return char.ToUpper( String[ 0 ] ) + String.Substring( 1 ).ToLower();
+        }
     }
 }

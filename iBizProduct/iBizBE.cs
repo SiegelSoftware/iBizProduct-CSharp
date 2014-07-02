@@ -20,14 +20,64 @@ namespace iBizProduct
     {
         private const string ProductionAPI = @"https://backend.ibizapi.com:8888";
         private const string StagingAPI = @"https://backendbeta.ibizapi.com:8888";
+        private static string[] APIMethods = { "SOAP", "JSON" };
+        private static string APIMethod = "JSON";
+        private static bool IsDev = false;
 
+        /// <summary>
+        /// API Call is a generic function which can be updated to use different API Methods. 
+        /// </summary>
+        /// <param name="Endpoint">The Endpoint Object to work with</param>
+        /// <param name="Action">The Action to perform</param>
+        /// <param name="Params">The Parameter list to send to the API</param>
+        /// <returns>API Response as a JObject</returns>
         public async static Task<JObject> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null )
         {
             if( Params == null ) Params = new Dictionary<string, object>();
-            var RequestEndpoint = Endpoint + "?action=" + Action;
+            var RequestEndpoint = EndpointFormatter( Endpoint, Action );
 
-            JObject return_obj = new JObject();
+            switch( APIMethod )
+            {
+                case "JSON":
+                    return await JSONCall( RequestEndpoint, Params );
+                default:
+                    throw new iBizException( "Unknown API Method Type" );
+            }
+        }
 
+        private static string EndpointFormatter( string Endpoint, string Action )
+        {
+            APIMethod = Environment.GetEnvironmentVariable( "APIMethod" ) != null ? Environment.GetEnvironmentVariable( "APIMethod" ) : APIMethod;
+
+            switch( APIMethod )
+            {
+                case "JSON":
+                    foreach( var Method in APIMethods )
+                    {
+                        Endpoint = Regex.Replace( Endpoint, "^" + Method, "" );
+                    }
+                    return APIMethod + Endpoint + "?action=" + Action;
+                case "SOAP":
+                    foreach( var Method in APIMethods )
+                    {
+                        Endpoint = Regex.Replace( Endpoint, "^" + Method, "" );
+                    }
+                    return APIMethod + Endpoint;
+                default:
+                    throw new iBizException( "Unknown API Method Type" );
+            }
+
+        }
+
+        /// <summary>
+        /// This implements the logic required specifically for working with the JSON endpoint
+        /// in the iBizAPI. 
+        /// </summary>
+        /// <param name="RequestEndpoint">The Formatted endpoint</param>
+        /// <param name="Params">Paramaters to be sent to the API</param>
+        /// <returns>Result as JObject</returns>
+        private async static Task<JObject> JSONCall( string RequestEndpoint, Dictionary<string, object> Params )
+        {
             string JsonSerializedParams = JsonConvert.SerializeObject( Params );
 
             try
@@ -35,10 +85,9 @@ namespace iBizProduct
 
                 using( var handler = new WebRequestHandler() )
                 {
-#if DEBUG
-                    // This is only needed due to the fact that the staging API does not have a valid certificate.
-                    handler.ServerCertificateValidationCallback = ( sender, cert, chain, sslPolicyErrors ) => true;
-#endif
+                    if( IsDev )
+                        handler.ServerCertificateValidationCallback = ( sender, cert, chain, sslPolicyErrors ) => true;
+
                     using( var client = new APIClient( handler ) )
                     {
                         client.BaseAddress = GetAPIUri();
@@ -50,21 +99,17 @@ namespace iBizProduct
                         {
                             // ... Read the string.
                             string result = await content.ReadAsStringAsync();
-                            return_obj = JsonConvert.DeserializeObject<JObject>( result );
+                            return JsonConvert.DeserializeObject<JObject>( result );
                         }
                     }
                 }
             }
             catch( Exception ex )
             {
-                return_obj.Add( "error", ex.Message );
+                return new JObject() { { "error", ex.Message } };
             }
-
-
-            return return_obj;
-
         }
-        
+
 
         /// <summary>
         /// This will give you the Uri to use for the backend. It is based on both the web.config and Environmental defaults.
@@ -77,25 +122,31 @@ namespace iBizProduct
         /// <returns>iBizAPI server Uri</returns>
         private static Uri GetAPIUri()
         {
-#if DEBUG
-            // When running this code as a release it will not look for the stage API.
-            if( bool.Parse( ConfigurationManager.AppSettings[ "IsDev" ] ) == true || HttpContext.Current.Request.IsLocal || Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/?:^dev|\\.ibizdevelopers\\.com$" ) ) 
+            // Verify if Dev is explicitly defined in Environment/AppSettings
+            IsDev = !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "IsDev" ] ) && bool.Parse( ConfigurationManager.AppSettings[ "IsDev" ] ) == true ? true : false;
+            string DevUri = "";
+
+            if( IsDev || HttpContext.Current.Request.IsLocal || Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/?:^dev|\\.ibizdevelopers\\.com$" ) )
             {
-                // Check to see if the DevAPIHost is defined in appSettings, otherwise use a default host.
-                string DevHost = ( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) ) ? Environment.GetEnvironmentVariable( "DevAPIHost" ) : ( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) ) ? ConfigurationManager.AppSettings[ "DevAPIHost" ] : "backendbeta.ibizapi.com";
+                IsDev = true;
 
-                string DevPort = ( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIPort" ) ) ) ? Environment.GetEnvironmentVariable( "DevAPIPort" ) : ( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) ) ? ConfigurationManager.AppSettings[ "DevAPIPort" ] : "8888";
+                // Check to see if the DevAPIHost is defined in Environment/AppSettings, otherwise use a default host.
+                string DevAPIHost = "backendbeta.ibizapi.com";
+                if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) ) DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIHost" );
+                if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) ) DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIHost" ];
 
-                string DevProtocol = ( String.Equals( DevPort, "80" ) ) ? "http://" : "https://";
-                
-                return new Uri( ( String.Equals( DevPort, "80" ) ) ? DevProtocol + DevHost : DevProtocol + DevHost + ":" + DevPort );
+                // Check to see if the DevAPIPort is defined in Environment/AppSettings, otherwise use a default port.
+                string DevAPIPort = "8888";
+                if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIPort" ) ) ) DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIPort" );
+                if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) ) DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIPort" ];
+
+                string DevProtocol = String.Equals( DevAPIPort, "80" ) ? "http://" : "https://";
+
+                // Return a Dev/Stage URI
+                DevUri = String.Equals( DevAPIPort, "80" ) ? ( DevProtocol + DevAPIHost ) : ( DevProtocol + DevAPIHost + ":" + DevAPIPort );
             }
 
-            // If we are debugging we will go ahead and use the Staging API if we got to this point.
-            return new Uri( StagingAPI );
-#else
-            return new Uri( ProductionAPI );
-#endif
+            return new Uri( IsDev ? DevUri : ProductionAPI );
         }
 
     }

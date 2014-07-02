@@ -11,8 +11,6 @@ using Newtonsoft.Json.Linq;
 
 namespace iBizProduct
 {
-    // TODO: Enable more control for limits and other optional parameters
-
     /// <summary>
     /// iBizProducts should use the iBizAPIClient to communicate with the iBizAPI. This will greatly reduce the time
     /// needed to implement a connection as the functions iBizProduct is meant to connect to are abstracted into easy to use methods. 
@@ -20,7 +18,7 @@ namespace iBizProduct
     /// </summary>
     public class iBizAPIClient
     {
-        private static string ExternalKey = iBizProductSettings.ExternalKey();
+        private static string ApiKey = iBizProductSettings.ExternalKey();
 
         #region CommerceManager/ProductManager/ProductOrder
 
@@ -30,17 +28,17 @@ namespace iBizProduct
         /// </summary>
         /// <param name="ProductOrderSpec">An associative array of the specifications that Panel will be tracking</param>
         /// <returns>The ProductOrder ID of the added Product Order.</returns>
-        public static int ProductOrderAdd( ProductOrderSpec ProductOrderSpec, int? ProductId = null  )
+        public static int ProductOrderAdd( ProductOrderSpec ProductOrderSpec, int? ProductId = null )
         {
             VerifyExternalKey();
 
-            if ( ProductId == null )
+            if( ProductId == null )
             {
                 ProductId = iBizProductSettings.ProductId();
             }
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ExternalKey },
+                { "external_key", ApiKey },
                 { "product_id", ProductId },
                 { "productorder_spec", ProductOrderSpec.OrderSpec() }
             };
@@ -63,18 +61,16 @@ namespace iBizProduct
             VerifyExternalKey();
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ExternalKey },
+                { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
                 { "productorder_spec", productOrderSpec.OrderSpec() }
             };
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params ).Result;
-            var success = 0;
-            result[ "success" ].ToString();
 
-            int.TryParse( result[ "success" ].ToString(), out success );
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
 
-            return success == 1; // If the value is 1 then we will return true.
+            return true;
         }
 
         /// <summary>
@@ -88,13 +84,16 @@ namespace iBizProduct
             VerifyExternalKey();
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ExternalKey },
+                { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
             };
 
             if( InfoToReturn != null ) Params.Add( "info_to_return", InfoToReturn );
 
             var view = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
+
+            if( view[ "error" ] != null ) throw new iBizException( view[ "error" ].ToString() );
+
             return view;
         }
 
@@ -126,12 +125,12 @@ namespace iBizProduct
         /// <param name="DescriptionAddOn"></param>
         /// <param name="DueNow"></param>
         /// <returns>BillResponse Enum Value</returns>
-        public static BillResponse ProductOrderBillOrderAddOneTime( DateTime CycleBeginData, DateTime CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, bool DueNow = true ) 
+        public static BillResponse ProductOrderBillOrderAddOneTime( DateTime CycleBeginData, DateTime CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, bool DueNow = true )
         {
             VerifyExternalKey();
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ExternalKey },
+                { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
                 { "cycle_begin_date", UnixTime.ConvertToUnixTime( CycleBeginData ) },
                 { "cycle_end_date", UnixTime.ConvertToUnixTime( CycleEndDate ) },
@@ -146,6 +145,29 @@ namespace iBizProduct
             var ResponseCode = int.Parse( result[ "response_code" ].ToString() );
 
             return ( BillResponse )ResponseCode;
+        }
+
+        /// <summary>
+        /// Open a case with the owner (end user) of a particular order. (Note: Use $$OFFER_NAME$$ in case fields to substitute the name of the offer at the level of owner.)
+        /// </summary>
+        /// <param name="ProductOrderId">The id of the productorder to open a case for.</param>
+        /// <param name="CaseSpec">The spec for the case added</param>
+        /// <returns>The id of the case added</returns>
+        public static int ProductOpenCaseWithOwner( int ProductOrderId, CaseSpec CaseSpec )
+        {
+            VerifyExternalKey();
+
+            Dictionary<string, object> Params = new Dictionary<string, object>() {
+                { "external_key", ApiKey },
+                { "productorder_id", ProductOrderId },
+                { "case_spec", CaseSpec }
+            };
+
+            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalOpenCaseWithOwner", Params ).Result;
+
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+
+            return int.Parse( result[ "new_id" ].ToString() );
         }
 
         #endregion
@@ -208,17 +230,32 @@ namespace iBizProduct
 */
         #region CommerceManager/ProductManager/ProductOrder/Event
 
-        // TODO: Create correct Paramater List
-        public static JObject ProductOrderUpdateEvent( string ProductOfferId, string AccountHost, string AccountId ) // Update Event Que
+        /// <summary>
+        /// This function allows you to notify iBizAPI of Event Updates on Event requests it has
+        /// sent. 
+        /// </summary>
+        /// <remarks>
+        /// This does not affect backoff requests. Backoff requests must be handled by the Product's 
+        /// API endpoint Order/{Object}/{Action}
+        /// </remarks>
+        /// <param name="EventId">The id of the productorder that we're going to update.</param>
+        /// <param name="Status">The status for the event, COMPLETE or ERROR.</param>
+        /// <param name="Message">A message to include with errors (this is customer visable).</param>
+        /// <returns>Indicates whether or not the update was successful</returns>
+        public static bool UpdateEvent( int EventId, EventStatus Status, string Message )
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", iBizProductSettings.ExternalKey() },
-                { "account_id", AccountId },
-                { "account_host", AccountHost },
-                { "productoffer_id", ProductOfferId }
+                { "productorderevent_id", EventId },
+                { "message", Message },
+                { "status", Status.ToString() }
             };
 
-            return iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder/Event", "ExternalUpdateEvent", Params ).Result;
+            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder/Event", "ExternalUpdateEvent", Params ).Result;
+
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+
+            return bool.Parse( result[ "success" ].ToString() );
         }
 
         #endregion

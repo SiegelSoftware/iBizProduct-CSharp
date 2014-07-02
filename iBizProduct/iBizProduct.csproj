@@ -44,6 +44,7 @@
     </Reference>
     <Reference Include="System">
     </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration">
     </Reference>
     <Reference Include="System.Core">
@@ -71,6 +72,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataContracts\BillResponse.cs" />
+    <Compile Include="DataContracts\CaseSpec.cs" />
+    <Compile Include="DataContracts\CaseStatus.cs" />
+    <Compile Include="DataContracts\CaseType.cs" />
+    <Compile Include="DataContracts\EventActions.cs" />
+    <Compile Include="DataContracts\EventStatus.cs" />
+    <Compile Include="DataContracts\Priority.cs" />
     <Compile Include="DataContracts\ProductAuthentication.cs" />
     <Compile Include="Http\APIClient.cs" />
     <Compile Include="iBizAPIClient.cs" />
