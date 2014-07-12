@@ -34,6 +34,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>bin\Release\iBizProduct.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -71,6 +72,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataContracts\AuthenticationAction.cs" />
     <Compile Include="DataContracts\BillResponse.cs" />
     <Compile Include="DataContracts\CaseSpec.cs" />
     <Compile Include="DataContracts\CaseStatus.cs" />

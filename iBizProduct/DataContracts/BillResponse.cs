@@ -1,6 +1,9 @@
 ﻿
 namespace iBizProduct.DataContracts
 {
+    /// <summary>
+    /// Response from the Backend for Billing Requests.
+    /// </summary>
     public enum BillResponse
     {
         /// <summary>

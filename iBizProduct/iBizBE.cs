@@ -39,7 +39,7 @@ namespace iBizProduct
             switch( APIMethod )
             {
                 case "JSON":
-                    return await JSONCall( RequestEndpoint, Params );
+                    return await JSONCall( RequestEndpoint, Params ).ConfigureAwait( false );
                 default:
                     throw new iBizException( "Unknown API Method Type" );
             }
@@ -82,25 +82,18 @@ namespace iBizProduct
 
             try
             {
-
-                using( var handler = new WebRequestHandler() )
+                using( var client = new APIClient() )
                 {
-                    if( IsDev )
-                        handler.ServerCertificateValidationCallback = ( sender, cert, chain, sslPolicyErrors ) => true;
+                    client.BaseAddress = GetAPIUri();
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    //client.DefaultRequestHeaders.Accept.Add( new MediaTypeWithQualityHeaderValue( "application/json" ) );
 
-                    using( var client = new APIClient( handler ) )
+                    using( HttpResponseMessage response = await client.PostAsync( RequestEndpoint, new StringContent( JsonSerializedParams, Encoding.UTF8, "application/json" ) ).ConfigureAwait( false ) )
+                    using( HttpContent content = response.Content )
                     {
-                        client.BaseAddress = GetAPIUri();
-                        client.DefaultRequestHeaders.Accept.Clear();
-                        //client.DefaultRequestHeaders.Accept.Add( new MediaTypeWithQualityHeaderValue( "application/json" ) );
-
-                        using( HttpResponseMessage response = await client.PostAsync( RequestEndpoint, new StringContent( JsonSerializedParams, Encoding.UTF8, "application/json" ) ).ConfigureAwait( false ) )
-                        using( HttpContent content = response.Content )
-                        {
-                            // ... Read the string.
-                            string result = await content.ReadAsStringAsync();
-                            return JsonConvert.DeserializeObject<JObject>( result );
-                        }
+                        // ... Read the string.
+                        string result = await content.ReadAsStringAsync().ConfigureAwait( false );
+                        return JsonConvert.DeserializeObject<JObject>( result );
                     }
                 }
             }
@@ -123,31 +116,76 @@ namespace iBizProduct
         private static Uri GetAPIUri()
         {
             // Verify if Dev is explicitly defined in Environment/AppSettings
-            IsDev = !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "IsDev" ] ) && bool.Parse( ConfigurationManager.AppSettings[ "IsDev" ] ) == true ? true : false;
+            IsDev = !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "IsDev" ] ) && bool.Parse( ConfigurationManager.AppSettings[ "IsDev" ] ) == true ?
+                true : ( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "IsDev" ) ) ) ? bool.Parse( Environment.GetEnvironmentVariable( "IsDev" ) ) : false;
             string DevUri = "";
+            bool IsLocal = false;
+            string RequestHost = "";
 
-            if( IsDev || HttpContext.Current.Request.IsLocal || Regex.IsMatch( HttpContext.Current.Request.Url.Host, "/?:^dev|\\.ibizdevelopers\\.com$" ) )
+            // We really need to be able to have a way to grab this in child threads and handle this where HttpContext does not exist.
+            try
             {
-                IsDev = true;
+                IsLocal = HttpContext.Current.Request.IsLocal;
+                RequestHost = HttpContext.Current.Request.Url.Host;
+            }
+            catch( Exception ) { }
 
-                // Check to see if the DevAPIHost is defined in Environment/AppSettings, otherwise use a default host.
-                string DevAPIHost = "backendbeta.ibizapi.com";
-                if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) ) DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIHost" );
-                if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) ) DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIHost" ];
+            try
+            {
+                if( IsDev || IsLocal || ( RequestHost != "" && Regex.IsMatch( RequestHost, @"/?:^dev|\.ibizdevelopers\.com$" ) ) )
+                {
+                    // Check to see if the DevAPIHost is defined in Environment/AppSettings, otherwise use a default host.
+                    string DevAPIHost = GetDevApiHost();
 
-                // Check to see if the DevAPIPort is defined in Environment/AppSettings, otherwise use a default port.
-                string DevAPIPort = "8888";
-                if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIPort" ) ) ) DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIPort" );
-                if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) ) DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIPort" ];
+                    // Check to see if the DevAPIPort is defined in Environment/AppSettings, otherwise use a default port.
+                    string DevAPIPort = GetDevApiPort();
 
-                string DevProtocol = String.Equals( DevAPIPort, "80" ) ? "http://" : "https://";
+                    string DevProtocol = GetDevApiProtocol();
 
-                // Return a Dev/Stage URI
-                DevUri = String.Equals( DevAPIPort, "80" ) ? ( DevProtocol + DevAPIHost ) : ( DevProtocol + DevAPIHost + ":" + DevAPIPort );
+                    // Return a Dev/Stage URI
+                    if( String.IsNullOrEmpty( DevAPIHost ) || String.IsNullOrEmpty( DevProtocol ) )
+                        return new Uri( StagingAPI );
+
+                    DevUri = Regex.IsMatch( DevProtocol, "^http" ) ? ( DevProtocol + DevAPIHost ) : ( DevProtocol + DevAPIHost + ":" + DevAPIPort );
+                }
+            }
+            catch( Exception ex )
+            {
+                throw new iBizException( "An exception occured while determining the correct backend API to use. Please refer to the environmental documentation and confirm your environment is correctly configured.", ex );
             }
 
-            return new Uri( IsDev ? DevUri : ProductionAPI );
+            // Return the default Production URI
+            return new Uri( ProductionAPI );
+
         }
 
+        public static string GetDevApiHost()
+        {
+            string DevAPIHost = "";
+            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) ) DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIHost" );
+            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) ) DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIHost" ];
+
+            return DevAPIHost;
+        }
+
+        public static string GetDevApiPort()
+        {
+            string DevAPIPort = "";
+            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIPort" ) ) ) DevAPIPort = Environment.GetEnvironmentVariable( "DevAPIPort" );
+            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) ) DevAPIPort = ConfigurationManager.AppSettings[ "DevAPIPort" ];
+
+            return DevAPIPort;
+        }
+
+        public static string GetDevApiProtocol()
+        {
+            string DevApiProtocol = "";
+            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevApiProtocol" ) ) ) DevApiProtocol = Environment.GetEnvironmentVariable( "DevApiProtocol" );
+            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevApiProtocol" ] ) ) DevApiProtocol = ConfigurationManager.AppSettings[ "DevApiProtocol" ];
+
+            if( !String.IsNullOrEmpty( DevApiProtocol ) && Regex.IsMatch( DevApiProtocol, "^http?" ) ) throw new iBizException( "Invalid Protocol format. ApiProtocol must be either http:// or https://" );
+
+            return DevApiProtocol;
+        }
     }
 }

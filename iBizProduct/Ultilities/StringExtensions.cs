@@ -29,6 +29,11 @@ namespace iBizProduct.Ultilities
             return string.Format( CultureInfo.InvariantCulture, format, args );
         }
 
+        /// <summary>
+        /// Formats the string with an Uppercase First Letter.
+        /// </summary>
+        /// <param name="String"></param>
+        /// <returns>Formatted string</returns>
         public static string UppercaseFirst( this string String )
         {
             return char.ToUpper( String[ 0 ] ) + String.Substring( 1 ).ToLower();

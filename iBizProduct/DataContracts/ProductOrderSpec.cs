@@ -17,6 +17,9 @@ namespace iBizProduct.DataContracts
         /// </summary>
         public ProductOrderSpec() { }
 
+        /// <summary>
+        /// The ProductOrder Name. This will be shown in the Panel.
+        /// </summary>
         public string ProductOrderName { get; set; }
 
         /// <summary>
@@ -61,7 +64,7 @@ namespace iBizProduct.DataContracts
         /// <summary>
         /// The Order Specifications that have been defined.
         /// </summary>
-        /// <returns>Dictionary<string,string> of the specifications</returns>
+        /// <returns>Dictionary&lt;string,string> of the specifications</returns>
         public Dictionary<string,object> OrderSpec()
         {
             if( ProductOrderName != null )

@@ -8,6 +8,9 @@ using System.ComponentModel;
 
 namespace iBizProduct.DataContracts
 {
+    /// <summary>
+    /// CaseSpec object for creating a case with the Backend. 
+    /// </summary>
     public class CaseSpec
     {
         /// <summary>
@@ -41,6 +44,7 @@ namespace iBizProduct.DataContracts
         /// <summary>
         /// [ REQUIRED ] The priority of the case ("LOW", "MEDIUM", "HIGH"). 
         /// </summary>
+        [DefaultValue( Priority.MEDIUM )]
         public Priority Priority { get; set; }
 
         /// <summary>
@@ -51,12 +55,16 @@ namespace iBizProduct.DataContracts
 
         /// <summary>
         /// [ REQUIRED ] The status of the case ("NEW", "CLOSED", "RESPONSE", "UPSTREAM", "CUSTOMER", "PARTNER", "PENDING")
+        /// Default: Customer
         /// </summary>
+        [DefaultValue( CaseStatus.CUSTOMER )]
         public CaseStatus Status { get; set; }
 
         /// <summary>
         /// [ REQUIRED ] The type of case ("QUESTION", "PROBLEM", "COMMENT", "INFO", "FOLLOWUP", "PRIVATE")
+        /// Default: INFO
         /// </summary>
+        [DefaultValue( CaseType.INFO )]
         public CaseType Type { get; set; }
 
         /// <summary>
@@ -65,7 +73,7 @@ namespace iBizProduct.DataContracts
         /// <returns>Dictionary spec based on how the object has been built.</returns>
         public Dictionary<string, object> GetSpec()
         {
-            if( !( Detail.Length > 0 || InternalNotes.Length > 0 ) ) throw new iBizException( "You must specificy either a case detail or internal notes." );
+            if( !( String.IsNullOrEmpty( Detail ) || String.IsNullOrEmpty( InternalNotes ) ) ) throw new iBizException( "You must specificy either a case detail or internal notes." );
             if( !AutoClose && ReturnHours < 1 ) throw new iBizException( "If AutoClose is disabled you must specify the number of hours in which to have the case returned." );
 
             var spec = new Dictionary<string, object>()
@@ -73,14 +81,14 @@ namespace iBizProduct.DataContracts
                 { "auto_close", ( AutoClose ) ? "YES" : "NO" },
                 { "description", Description },
                 { "is_resolved", ( IsResolved ) ? "YES" : "NO" },
-                { "priority", Priority },
-                { "status", Status },
-                { "type", Type }
+                { "priority", Priority.ToString() },
+                { "status", Status.ToString() },
+                { "type", Type.ToString() }
             };
 
-            if( Detail.Length > 0 ) spec.Add( "detail", Detail );
+            if( !String.IsNullOrEmpty( Detail ) ) spec.Add( "detail", Detail );
 
-            if( InternalNotes.Length > 0 ) spec.Add( "internal_notes", InternalNotes );
+            if( !String.IsNullOrEmpty( InternalNotes ) ) spec.Add( "internal_notes", InternalNotes );
 
             if( ReturnHours > 0 ) spec.Add( "return_hours", ReturnHours );
 

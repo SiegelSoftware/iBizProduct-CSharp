@@ -5,6 +5,9 @@ using System.ComponentModel;
 
 namespace iBizProduct.DataContracts
 {
+    /// <summary>
+    /// Base InfoToReturn Object
+    /// </summary>
     public abstract class InfoToReturn
     {
         /// <summary>

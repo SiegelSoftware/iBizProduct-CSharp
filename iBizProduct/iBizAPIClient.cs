@@ -27,6 +27,7 @@ namespace iBizProduct
         /// clicks "Add to Cart" or "Checkout" on the PurchaseAdd page of the Panel.
         /// </summary>
         /// <param name="ProductOrderSpec">An associative array of the specifications that Panel will be tracking</param>
+        /// <param name="ProductId">[Optional] ProductId. If not provided it must be available in the Environment.</param>
         /// <returns>The ProductOrder ID of the added Product Order.</returns>
         public static int ProductOrderAdd( ProductOrderSpec ProductOrderSpec, int? ProductId = null )
         {
@@ -160,7 +161,7 @@ namespace iBizProduct
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
-                { "case_spec", CaseSpec }
+                { "case_spec", CaseSpec.GetSpec() }
             };
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalOpenCaseWithOwner", Params ).Result;
@@ -255,7 +256,7 @@ namespace iBizProduct
 
             if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
 
-            return bool.Parse( result[ "success" ].ToString() );
+            return int.Parse( result[ "success" ].ToString() ) == 1 ? true : false;
         }
 
         #endregion
@@ -293,6 +294,11 @@ namespace iBizProduct
             return true;
         }
 
+        /// <summary>
+        /// Verify that the External Key Sent by the Backend is Valid for iBizProduct
+        /// </summary>
+        /// <param name="ExternalKey"></param>
+        /// <returns></returns>
         public static bool IsValidBackendRequest( string ExternalKey )
         {
             return ExternalKey == iBizProductSettings.ExternalKey();

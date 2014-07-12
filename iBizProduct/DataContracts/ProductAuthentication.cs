@@ -8,19 +8,44 @@ using System.Web;
 
 namespace iBizProduct.DataContracts
 {
+    /// <summary>
+    /// Product Authentication Object
+    /// </summary>
     public class ProductAuthentication// : IDisposable
     {
-        //[ DefaultValue( HttpContext.Current.Request.Params["Action"] ) ]
-        public string Action { get; set; }
+        /// <summary>
+        /// Action to perform. ( i.e. PurchaseAdd => Add, PurchaseEdit => Edit
+        /// </summary>
+        public AuthenticationAction Action { get; set; }
 
-        //[DefaultValue( HttpContext.Current.Request.Params[ "SessionID" ] )]
+        /// <summary>
+        /// Session Id to verify the request has a valid backend session
+        /// </summary>
         public string SessionID { get; set; }
 
-        //[DefaultValue( HttpContext.Current.Request.Params[ "Language" ] )]
+        /// <summary>
+        /// The language the Panel is currently being viewed in
+        /// </summary>
         public string Language { get; set; }
+
+        /// <summary>
+        /// The AccountId of the user who is logged in.
+        /// </summary>
         public int MyAccountID { get; set; }
+
+        /// <summary>
+        /// The AccountId the user is drilled down to ( viewing )
+        /// </summary>
         public int AccountID { get; set; }
+
+        /// <summary>
+        /// The Offer Id
+        /// </summary>
         public int OfferID { get; set; }
+
+        /// <summary>
+        /// The ProductOrderId, the Product should use when necessary. 
+        /// </summary>
         public int ProductOrderID { get; set; }
 
     }

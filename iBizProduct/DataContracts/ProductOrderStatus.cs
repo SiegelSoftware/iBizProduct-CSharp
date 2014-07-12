@@ -4,6 +4,9 @@
 
 namespace iBizProduct.DataContracts
 {
+    /// <summary>
+    /// Product Order Status
+    /// </summary>
     public enum ProductOrderStatus
     {
         /// <summary>
