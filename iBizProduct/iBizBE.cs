@@ -32,8 +32,10 @@ namespace iBizProduct
         /// <param name="Action">The Action to perform</param>
         /// <param name="Params">The Parameter list to send to the API</param>
         /// <returns>API Response as a JObject</returns>
-        public async static Task<JObject> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null, string APIMethod = "" )
+        public async static Task<JObject> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null, string APIMethodToUse = "" )
         {
+            APIMethod = String.IsNullOrEmpty( APIMethodToUse ) ? DefaultAPIMethod : APIMethodToUse;
+
             if( Params == null ) Params = new Dictionary<string, object>();
             var RequestEndpoint = EndpointFormatter( Endpoint, Action );
 
@@ -60,12 +62,20 @@ namespace iBizProduct
                     {
                         Endpoint = Regex.Replace( Endpoint, "^" + Method, "" );
                     }
+
+                    if( !Regex.IsMatch( Endpoint, @"^\/" ) )
+                        Endpoint = "/" + Endpoint;
+
                     return APIMethod + Endpoint + "?action=" + Action;
                 case "SOAP":
                     foreach( var Method in APIMethods )
                     {
                         Endpoint = Regex.Replace( Endpoint, "^" + Method, "" );
                     }
+
+                    if( !Regex.IsMatch( Endpoint, @"^\/" ) )
+                        Endpoint = "/" + Endpoint;
+
                     return APIMethod + Endpoint;
                 case "REST":
                     throw new iBizException( "This is yet to be implemented.", new NotImplementedException( "The REST API is still in development and is not yet in use." ) );

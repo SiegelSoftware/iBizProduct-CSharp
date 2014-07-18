@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using iBizProduct.Ultilities;
 
 namespace iBizProduct
 {
@@ -150,18 +151,38 @@ namespace iBizProduct
 
         internal static void ReadSettings()
         {
-            using( StreamReader r = new StreamReader( SettingsFile ) )
+            try
             {
-                string json = r.ReadToEnd();
-                Settings = JsonConvert.DeserializeObject<NameValueCollection>( json );
+                // We only want to read in the file assuming that it actually exists.
+                if( File.Exists( SettingsFile ) )
+                {
+                    using( StreamReader r = new StreamReader( SettingsFile ) )
+                    {
+                        string json = r.ReadToEnd();
+                        Settings = JsonConvert.DeserializeObject<NameValueCollection>( json );
+                    }
+                }
+            }
+            catch( Exception ex )
+            {
+                // This is most likely due to a parsing error.
+                iBizLog.WriteException( ex );
             }
         }
 
         internal static void WriteSettings()
         {
-            var json = new JObject( Settings );
+            try
+            {
+                var json = new JObject( Settings );
 
-            File.WriteAllText( SettingsFile, json.ToString() );
+                File.WriteAllText( SettingsFile, json.ToString() );
+            }
+            catch( Exception ex )
+            {
+                // This is most likely due to the application running without proper file permissions
+                iBizLog.WriteException( ex );
+            }
         }
     }
 }
