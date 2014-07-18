@@ -2,15 +2,94 @@
 using System.Configuration;
 using System.Collections.Specialized;
 using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace iBizProduct
 {
-    internal class iBizProductSettings
+    /// <summary>
+    /// Provides a context that allows iBizProduct to work within the context of either a standalone product or
+    /// Marketplace Product. 
+    /// </summary>
+    public sealed class iBizProductSettings
     {
-        private const string SettingsFile = "ProductSettings.ibpv3";
-        private static NameValueCollection Settings = new NameValueCollection();
+        private static string SettingsFile = Environment.GetFolderPath( Environment.SpecialFolder.UserProfile ) + "ProductSettings.ibpv3";
 
-        public static string ConfigKey()
+        /// <summary>
+        /// This contains the settings that iBizProduct has to work with. 
+        /// </summary>
+        public static NameValueCollection Settings = new NameValueCollection();
+
+        /// <summary>
+        /// The Product Id from the settings that iBizProduct has to work with.
+        /// </summary>
+        public static int ProductId
+        {
+            get
+            {
+                if( IsMarketplaceApp )
+                {
+                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented" );
+                }
+                else
+                {
+                    int ProductId;
+
+                    if( !int.TryParse( Settings[ "ProductId" ], out ProductId ) )
+                    {
+                        if( !int.TryParse( Environment.GetEnvironmentVariable( "ProductId" ), out ProductId ) )
+                        {
+                            if( !int.TryParse( ConfigurationManager.AppSettings[ "ProductId" ], out ProductId ) )
+                            {
+                                throw new iBizException( "We seem to be having some trouble finding your Product Id. Please make sure that this is available in your Environment or AppSettings." );
+                            }
+                        }
+                    }
+
+                    return ProductId;
+                }
+            }
+        }
+
+        /// <summary>
+        /// The External Key from the Product settings that iBizProuct has to work with.
+        /// </summary>
+        public static string ExternalKey
+        {
+            get
+            {
+                if( IsMarketplaceApp )
+                {
+                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
+                }
+                else
+                {
+                    string ExternalKey = Settings[ "ExternalKey" ];
+
+                    if( String.IsNullOrEmpty( ExternalKey ) )
+                        ExternalKey = Environment.GetEnvironmentVariable( "ExternalKey" );
+
+                    if( String.IsNullOrEmpty( ExternalKey ) )
+                        ExternalKey = ConfigurationManager.AppSettings[ "ExternalKey" ];
+
+                    return ExternalKey;
+                }
+            }
+        }
+        public static bool IsMarketplaceApp
+        {
+            get
+            {
+                return Settings[ "Marketplace" ] == "true" ? true : false;
+            }
+        }
+
+        static iBizProductSettings()
+        {
+            ReadSettings();
+        }
+
+        internal static string ConfigKey()
         {
             string ConfigKey = Environment.GetEnvironmentVariable( "ConfigKey" );
 
@@ -24,7 +103,7 @@ namespace iBizProduct
             return ConfigKey;
         }
 
-        public static string ConfigVector()
+        internal static string ConfigVector()
         {
             string ConfigVector = Environment.GetEnvironmentVariable( "ConfigVector" );
 
@@ -38,7 +117,7 @@ namespace iBizProduct
             return ConfigVector;
         }
 
-        public static string ConfigSalt()
+        internal static string ConfigSalt()
         {
             string ConfigSalt = Environment.GetEnvironmentVariable( "ConfigSalt" );
 
@@ -52,34 +131,37 @@ namespace iBizProduct
             return ConfigSalt;
         }
 
-        public static int ProductId()
+        public static void AddSetting( string key, string value )
         {
-            int ProductId;
+            if( Settings == null || Settings.Count == 0 )
+                ReadSettings();
 
-            if( !int.TryParse( Environment.GetEnvironmentVariable( "ProductId" ), out ProductId ) )
+            Settings.Add( key, value );
+            WriteSettings();
+        }
+
+        public static string GetSetting( string key )
+        {
+            if( Settings == null || Settings.Count == 0 )
+                ReadSettings();
+
+            return Settings[ key ];
+        }
+
+        internal static void ReadSettings()
+        {
+            using( StreamReader r = new StreamReader( SettingsFile ) )
             {
-                if ( !int.TryParse( ConfigurationManager.AppSettings[ "ProductId" ], out ProductId ) )
-                {
-                    throw new iBizException( "We seem to be having some trouble finding your Product Id. Please make sure that this is available in your Environment or AppSettings." );
-                }
+                string json = r.ReadToEnd();
+                Settings = JsonConvert.DeserializeObject<NameValueCollection>( json );
             }
-
-            return ProductId;
         }
 
-        public static string ExternalKey()
+        internal static void WriteSettings()
         {
-            string ExternalKey = Environment.GetEnvironmentVariable( "ExternalKey" );
+            var json = new JObject( Settings );
 
-            if( String.IsNullOrEmpty( ExternalKey ) )
-                ExternalKey = ConfigurationManager.AppSettings[ "ExternalKey" ];
-
-            return ExternalKey;
-        }
-
-        public static void AddSetting( string name, string value )
-        {
-            Settings.Add( name, value );
+            File.WriteAllText( SettingsFile, json.ToString() );
         }
     }
 }
