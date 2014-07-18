@@ -7,6 +7,7 @@ using System.Configuration;
 using System.Web;
 using System.Web.SessionState;
 using iBizProduct.DataContracts;
+using iBizProduct.Ultilities;
 using Newtonsoft.Json.Linq;
 
 namespace iBizProduct
@@ -18,7 +19,12 @@ namespace iBizProduct
     /// </summary>
     public class iBizAPIClient
     {
-        private static string ApiKey = iBizProductSettings.ExternalKey();
+        private static string ApiKey = iBizProductSettings.ExternalKey;
+
+        static iBizAPIClient()
+        {
+            VerifyExternalKey();
+        }
 
         #region CommerceManager/ProductManager/ProductOrder
 
@@ -31,11 +37,9 @@ namespace iBizProduct
         /// <returns>The ProductOrder ID of the added Product Order.</returns>
         public static int ProductOrderAdd( ProductOrderSpec ProductOrderSpec, int? ProductId = null )
         {
-            VerifyExternalKey();
-
             if( ProductId == null )
             {
-                ProductId = iBizProductSettings.ProductId();
+                ProductId = iBizProductSettings.ProductId;
             }
 
             Dictionary<string, object> Params = new Dictionary<string, object>() {
@@ -59,8 +63,6 @@ namespace iBizProduct
         /// <returns>A boolean indicating whether or not the edit was successful.</returns>
         public static bool ProductOrderEdit( int ProductOrderId, ProductOrderSpec productOrderSpec )
         {
-            VerifyExternalKey();
-
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
@@ -82,8 +84,6 @@ namespace iBizProduct
         /// <returns>Dictionary&lt;string, object&gt; with the requested View Object</returns>
         public static JObject ProductOrderView( int ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
         {
-            VerifyExternalKey();
-
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
@@ -91,7 +91,7 @@ namespace iBizProduct
 
             if( InfoToReturn != null ) Params.Add( "info_to_return", InfoToReturn );
 
-            var view = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
+            var view = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
 
             if( view[ "error" ] != null ) throw new iBizException( view[ "error" ].ToString() );
 
@@ -128,8 +128,6 @@ namespace iBizProduct
         /// <returns>BillResponse Enum Value</returns>
         public static BillResponse ProductOrderBillOrderAddOneTime( DateTime CycleBeginData, DateTime CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, bool DueNow = true )
         {
-            VerifyExternalKey();
-
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
@@ -142,7 +140,7 @@ namespace iBizProduct
             if( DescriptionAddOn != null ) Params.Add( "description_addon", DescriptionAddOn );
             Params.Add( "due_now", ( ( DueNow == true ) ? 1 : 0 ).ToString() );
 
-            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params ).Result;
+            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params ).Result;
             var ResponseCode = int.Parse( result[ "response_code" ].ToString() );
 
             return ( BillResponse )ResponseCode;
@@ -156,19 +154,35 @@ namespace iBizProduct
         /// <returns>The id of the case added</returns>
         public static int ProductOpenCaseWithOwner( int ProductOrderId, CaseSpec CaseSpec )
         {
-            VerifyExternalKey();
-
-            Dictionary<string, object> Params = new Dictionary<string, object>() {
+            Dictionary<string, object> Params = new Dictionary<string, object>() 
+            {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
                 { "case_spec", CaseSpec.GetSpec() }
             };
 
-            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalOpenCaseWithOwner", Params ).Result;
+            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalOpenCaseWithOwner", Params ).Result;
 
             if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
 
             return int.Parse( result[ "new_id" ].ToString() );
+        }
+
+        public static DateTime GetNextChargeDate( int ProductOrderId )
+        {
+            var Params = new Dictionary<string, object>() 
+            {
+                { "external_key", ApiKey },
+                { "productorder_id", ProductOrderId }
+            };
+
+            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalGetNextChargeDate", Params ).Result;
+
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+
+            var ChargeDate = new DateTime();
+
+            return ChargeDate.ConvertFromUnixTime( int.Parse( result[ "next_charge_date" ].ToString() ) );
         }
 
         #endregion
@@ -176,7 +190,8 @@ namespace iBizProduct
         #region CommerceManager/ProductOffer
 
         /// <summary>
-        /// The Product Offer Price provides a way to get a ProductOffer price, including the offer chain.
+        /// The Product Offer Price provides a way to get a ProductOffer price, including the offer chain. This should only be used for 
+        /// reference in the GUI assuming you do not have access to the conversion ratio's in the Panel. 
         /// </summary>
         /// <param name="ProductOfferId">The ID of the Product Offer [REQUIRED]</param>
         /// <param name="AccountHost">Your account host</param>
@@ -194,7 +209,11 @@ namespace iBizProduct
 
             if( AccountId != null ) Params.Add( "account_id", AccountId );
 
-            return iBizBE.APICall( "JSON/CommerceManager/ProductOffer", "ExternalProductPrice", Params ).Result;
+            var result = iBizBE.APICall( "JSON/CommerceManager/ProductOffer", "ExternalProductPrice", Params ).Result;
+
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+
+            return result;
         }
 
         #endregion
@@ -246,7 +265,7 @@ namespace iBizProduct
         public static bool UpdateEvent( int EventId, EventStatus Status, string Message )
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", iBizProductSettings.ExternalKey() },
+                { "external_key", iBizProductSettings.ExternalKey },
                 { "productorderevent_id", EventId },
                 { "message", Message },
                 { "status", Status.ToString() }
@@ -301,7 +320,7 @@ namespace iBizProduct
         /// <returns></returns>
         public static bool IsValidBackendRequest( string ExternalKey )
         {
-            return ExternalKey == iBizProductSettings.ExternalKey();
+            return ExternalKey == iBizProductSettings.ExternalKey;
         }
 
         /// <summary>
@@ -311,7 +330,7 @@ namespace iBizProduct
         /// <returns>True if a value exists for the External Key</returns>
         public static bool ExternalKeyExists()
         {
-            return !String.IsNullOrEmpty( iBizProductSettings.ExternalKey() );
+            return !String.IsNullOrEmpty( iBizProductSettings.ExternalKey );
         }
 
 
@@ -324,7 +343,7 @@ namespace iBizProduct
             if( !ExternalKeyExists() )
                 throw new iBizException( "Your Products External Key was not found or is not accessible. Please verify that the key is set in the AppSettings " +
                                             "section of your config file. You can find the Product External Key in the Panel under the External Attributes section " +
-                                            "of the ProductEdit page." );
+                                            "of the ProductEdit page.", new SettingsPropertyNotFoundException( "The setting you are looking for is not available or does not exist within the current scope of the application. Please refer to the setup documentation for required systems configurations." ) );
         }
     }
 }

@@ -20,8 +20,9 @@ namespace iBizProduct
     {
         private const string ProductionAPI = @"https://backend.ibizapi.com:8888";
         private const string StagingAPI = @"https://backendbeta.ibizapi.com:8888";
-        private static string[] APIMethods = { "SOAP", "JSON" };
-        private static string APIMethod = "JSON";
+        private static string[] APIMethods = { "SOAP", "JSON", @"iBiz\/API" };
+        private static string APIMethod = "";
+        private static string DefaultAPIMethod = "JSON";
         private static bool IsDev = false;
 
         /// <summary>
@@ -31,8 +32,10 @@ namespace iBizProduct
         /// <param name="Action">The Action to perform</param>
         /// <param name="Params">The Parameter list to send to the API</param>
         /// <returns>API Response as a JObject</returns>
-        public async static Task<JObject> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null )
+        public async static Task<JObject> APICall( string Endpoint, string Action = "VIEW", Dictionary<string, object> Params = null, string APIMethodToUse = "" )
         {
+            APIMethod = String.IsNullOrEmpty( APIMethodToUse ) ? DefaultAPIMethod : APIMethodToUse;
+
             if( Params == null ) Params = new Dictionary<string, object>();
             var RequestEndpoint = EndpointFormatter( Endpoint, Action );
 
@@ -40,6 +43,8 @@ namespace iBizProduct
             {
                 case "JSON":
                     return await JSONCall( RequestEndpoint, Params ).ConfigureAwait( false );
+                case "REST":
+                    throw new iBizException( "This is yet to be implemented.", new NotImplementedException( "The REST API is still in development and is not yet in use." ) );
                 default:
                     throw new iBizException( "Unknown API Method Type" );
             }
@@ -47,7 +52,8 @@ namespace iBizProduct
 
         private static string EndpointFormatter( string Endpoint, string Action )
         {
-            APIMethod = Environment.GetEnvironmentVariable( "APIMethod" ) != null ? Environment.GetEnvironmentVariable( "APIMethod" ) : APIMethod;
+            if( String.IsNullOrEmpty( APIMethod ) )
+                APIMethod = Environment.GetEnvironmentVariable( "APIMethod" ) != null ? Environment.GetEnvironmentVariable( "APIMethod" ) : DefaultAPIMethod;
 
             switch( APIMethod )
             {
@@ -56,13 +62,23 @@ namespace iBizProduct
                     {
                         Endpoint = Regex.Replace( Endpoint, "^" + Method, "" );
                     }
+
+                    if( !Regex.IsMatch( Endpoint, @"^\/" ) )
+                        Endpoint = "/" + Endpoint;
+
                     return APIMethod + Endpoint + "?action=" + Action;
                 case "SOAP":
                     foreach( var Method in APIMethods )
                     {
                         Endpoint = Regex.Replace( Endpoint, "^" + Method, "" );
                     }
+
+                    if( !Regex.IsMatch( Endpoint, @"^\/" ) )
+                        Endpoint = "/" + Endpoint;
+
                     return APIMethod + Endpoint;
+                case "REST":
+                    throw new iBizException( "This is yet to be implemented.", new NotImplementedException( "The REST API is still in development and is not yet in use." ) );
                 default:
                     throw new iBizException( "Unknown API Method Type" );
             }
