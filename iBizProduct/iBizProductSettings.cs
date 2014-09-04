@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Configuration;
 using System.Collections.Specialized;
+using System.Configuration;
+using System.Diagnostics;
 using System.IO;
+using System.Net.Mail;
+using iBizProduct.Ultilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using iBizProduct.Ultilities;
 
 namespace iBizProduct
 {
@@ -14,6 +16,7 @@ namespace iBizProduct
     /// </summary>
     public sealed class iBizProductSettings
     {
+
         private static string SettingsFile = Environment.GetFolderPath( Environment.SpecialFolder.UserProfile ) + "ProductSettings.ibpv3";
 
         /// <summary>
@@ -34,20 +37,7 @@ namespace iBizProduct
                 }
                 else
                 {
-                    int ProductId;
-
-                    if( !int.TryParse( Settings[ "ProductId" ], out ProductId ) )
-                    {
-                        if( !int.TryParse( Environment.GetEnvironmentVariable( "ProductId" ), out ProductId ) )
-                        {
-                            if( !int.TryParse( ConfigurationManager.AppSettings[ "ProductId" ], out ProductId ) )
-                            {
-                                throw new iBizException( "We seem to be having some trouble finding your Product Id. Please make sure that this is available in your Environment or AppSettings." );
-                            }
-                        }
-                    }
-
-                    return ProductId;
+                    return GetSetting<int>( "ProductId" );
                 }
             }
         }
@@ -65,18 +55,90 @@ namespace iBizProduct
                 }
                 else
                 {
-                    string ExternalKey = Settings[ "ExternalKey" ];
-
-                    if( String.IsNullOrEmpty( ExternalKey ) )
-                        ExternalKey = Environment.GetEnvironmentVariable( "ExternalKey" );
-
-                    if( String.IsNullOrEmpty( ExternalKey ) )
-                        ExternalKey = ConfigurationManager.AppSettings[ "ExternalKey" ];
+                    var ExternalKey = GetSetting<string>( "ExternalKey" );
 
                     return ExternalKey;
                 }
             }
         }
+
+        public static string EventLogName
+        {
+            get
+            {
+                if( IsMarketplaceApp )
+                {
+                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
+                }
+                else
+                {
+                    var EventLogName = GetSetting<string>( "EventLogName", "iBizProduct" );
+
+                    return EventLogName;
+                }
+            }
+        }
+
+        public static string EventLogSource
+        {
+            get
+            {
+                if( IsMarketplaceApp )
+                {
+                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
+                }
+                else
+                {
+                    var EventLogSource = GetSetting<string>( "EventLogSource", "iBizProduct" );
+
+                    return EventLogSource;
+                }
+            }
+        }
+
+        public static EventLog EventLog
+        {
+            get
+            {
+                var log = new EventLog();
+                log.Source = "iBizProduct v3";
+                log.Log = EventLogSource;
+
+
+                if( EventLog.SourceExists( log.Source ) )
+                {
+                    // We don't want to catch this here if the application does not have the appropriate 
+                    // permissions to create the log. 
+                    EventLog.CreateEventSource( log.Source, EventLog.Log, "." );
+                }
+
+                return log;
+            }
+        }
+
+        /// <summary>
+        /// The Smtp Server from the Product settings that iBizProuct has to work with.
+        /// </summary>
+        public static SmtpClient SmtpClient
+        {
+            get
+            {
+                if( IsMarketplaceApp )
+                {
+                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
+                }
+                else
+                {
+                    var SmtpServer = GetSetting<string>( "SmtpServer", "localhost" );
+                    var SmtpPort = GetSetting<int>( "SmtpPort", 25 );
+
+                    var SmtpClient = new SmtpClient( SmtpServer, SmtpPort );
+
+                    return SmtpClient;
+                }
+            }
+        }
+
         public static bool IsMarketplaceApp
         {
             get
@@ -182,6 +244,37 @@ namespace iBizProduct
             {
                 // This is most likely due to the application running without proper file permissions
                 iBizLog.WriteException( ex );
+            }
+        }
+
+        private static T GetSetting<T>( string SettingName )
+        {
+            string settingValue = Settings[ SettingName ];
+
+            if( String.IsNullOrEmpty( settingValue ) )
+                settingValue = Environment.GetEnvironmentVariable( SettingName );
+            
+            if( String.IsNullOrEmpty( settingValue ) )
+                settingValue = ConfigurationManager.AppSettings[ SettingName ];
+
+            if( String.IsNullOrEmpty( settingValue ) )
+            {
+                var NullException = new NullReferenceException( string.Format( "There is currently no definition that iBizProduct can use for: {0}.", SettingName ) );
+                throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
+            }
+
+            return ( T )Convert.ChangeType( settingValue, typeof( T ) );
+        }
+
+        private static T GetSetting<T>( string SettingName, T Default )
+        {
+            try
+            {
+                return GetSetting<T>( SettingName );
+            }
+            catch
+            {
+                return Default;
             }
         }
     }
