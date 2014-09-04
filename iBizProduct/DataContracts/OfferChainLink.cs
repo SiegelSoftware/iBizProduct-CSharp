@@ -3,8 +3,15 @@ using Newtonsoft.Json.Linq;
 
 namespace iBizProduct.DataContracts
 {
+    /// <summary>
+    /// This represents a single link in the Offer Chain
+    /// </summary>
     public class OfferChainLink
     {
+        /// <summary>
+        /// Constructs an Offer Chain Link from the JObject returned by the Backend.
+        /// </summary>
+        /// <param name="Obj"></param>
         public OfferChainLink( JObject Obj )
         {
             this.OfferCurrency = Obj[ "OFFER_CURRENCY" ].ToString();

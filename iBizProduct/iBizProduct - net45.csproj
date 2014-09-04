@@ -78,7 +78,7 @@
     <Compile Include="DataContracts\EventActions.cs" />
     <Compile Include="DataContracts\EventStatus.cs" />
     <Compile Include="DataContracts\Language.cs" />
-    <Compile Include="DataContracts\OfferDetails.cs" />
+    <Compile Include="DataContracts\OfferChainLink.cs" />
     <Compile Include="DataContracts\OrderPricing.cs" />
     <Compile Include="DataContracts\PaymentFrequency.cs" />
     <Compile Include="DataContracts\PricingModel.cs" />
@@ -101,6 +101,7 @@
     <Compile Include="Security\iBizSecure.cs" />
     <Compile Include="Security\iBizSqlMembershipProvider.cs" />
     <Compile Include="Ultilities\DateTimeExtensions.cs" />
+    <Compile Include="Ultilities\EventLogCollection.cs" />
     <Compile Include="Ultilities\EventLogger.cs" />
     <Compile Include="Ultilities\iBizLog.cs" />
     <Compile Include="Ultilities\ILogger.cs" />
