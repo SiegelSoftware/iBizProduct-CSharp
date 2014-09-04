@@ -1,7 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using iBizProduct.DataContracts;
 
-namespace iBizProduct.DataContracts.Templates
+namespace iBizProduct.Models.Templates
 {
     /// <summary>
     /// This provides a base class for working with Event Messages.
@@ -18,12 +19,12 @@ namespace iBizProduct.DataContracts.Templates
         /// <summary>
         /// The associated Event Id
         /// </summary>
-        public T EventId { get; set; }
+        public int EventId { get; set; }
 
         /// <summary>
         /// The Status of the event as of this message
         /// </summary>
-        public EventStatus Status { get; set; }
+        public EventStatus Status { get; set; } 
 
         /// <summary>
         /// The message

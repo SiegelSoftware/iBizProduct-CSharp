@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace iBizProduct.DataContracts.Templates
+namespace iBizProduct.Models.Templates
 {
     /// <summary>
     /// This allows for the the implementation of a Product Wiki. Pages Maintain a Git like 1 - * relationship

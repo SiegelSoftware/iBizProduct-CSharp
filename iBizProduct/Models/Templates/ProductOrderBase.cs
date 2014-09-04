@@ -1,5 +1,5 @@
 ﻿
-namespace iBizProduct.DataContracts.Templates
+namespace iBizProduct.Models.Templates
 {
     /// <summary>
     /// This provides a base model for a ProductOrder. This may be applied to any model

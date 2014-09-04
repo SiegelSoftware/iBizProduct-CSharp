@@ -1,19 +1,23 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using iBizProduct.DataContracts;
 
-namespace iBizProduct.DataContracts.Templates
+namespace iBizProduct.Models.Templates
 {
     /// <summary>
     /// This provides a base class for storing Event History
     /// </summary>
-    /// <typeparam name="T">Should be Guid or Int depending on the standard of your Product DbContext</typeparam>
-    public abstract class EventBase<T>
+    public abstract class EventBase
     {
         /// <summary>
-        /// The Product's Event Id
+        /// The Event Id sent by the Backend iBizAPI
         /// </summary>
-        [DatabaseGenerated( DatabaseGeneratedOption.Identity )]
-        public T EventId { get; set; }
+        public int EventId { get; set; }
+
+        /// <summary>
+        /// The Associated ProductOrderId
+        /// </summary>
+        public int ProductOrderId { get; set; }
 
         /// <summary>
         /// When the Event was first requested.
@@ -33,12 +37,11 @@ namespace iBizProduct.DataContracts.Templates
         /// <summary>
         /// The type of Event Requested.
         /// </summary>
-        public EventActions EventType { get; set; }
+        public EventActions Type { get; set; }
 
         /// <summary>
-        /// The Event Id sent by the Backend iBizAPI
+        /// Indicates whether the event is currently in the queue or not.
         /// </summary>
-        [Index( IsUnique = true )]
-        public int PurchaseOrderEventId { get; set; }
+        public bool IsQueued { get; set; }
     }
 }

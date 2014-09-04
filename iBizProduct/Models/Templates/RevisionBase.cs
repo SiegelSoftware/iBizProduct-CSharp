@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace iBizProduct.DataContracts.Templates
+namespace iBizProduct.Models.Templates
 {
     /// <summary>
     /// This provides a base class for creating a Product Wiki. A particular Revision should be
