@@ -24,7 +24,8 @@ namespace iBizProduct.Security
             { "MaxInvalidPasswordAttempts", "3" },
             { "PasswordAttemptWindow", "30" },
             { "MinRequiredPasswordLength", "8" },
-            { "MinRequiredNonAlphanumericCharacters", "0" }
+            { "MinRequiredNonAlphanumericCharacters", "0" },
+            { "MembershipUseWindowsProfile", "true" }
         };
 
         /// <summary>
@@ -54,18 +55,22 @@ namespace iBizProduct.Security
         {
             try
             {
-                string value = iBizProductSettings.GetSetting( name );
+                string value = SettingsBase.GetSetting<string>( name, defaultSettings[ name ] );
 
-                if( String.IsNullOrEmpty( value ) ) value = defaultSettings[ name ];
+                if( String.IsNullOrEmpty( value ) && !allowNull )
+                    throw new NullReferenceException( "There is no setting available for " + name );
 
-                if( String.IsNullOrEmpty( value ) && !allowNull ) throw new NullReferenceException( "There is no setting available for " + name );
-                
                 return value;
             }
             catch( Exception ex )
             {
                 throw new iBizException( "Please refer to the iBizProduct documentation on how to properly configure your environment.", ex );
             }
+        }
+
+        private T GetSetting<T>( string name, bool allowNull = false )
+        {
+            return ( T )Convert.ChangeType( GetSetting( name, allowNull ), typeof( T ) );
         }
 
         private string GetConnectionString()
@@ -79,11 +84,19 @@ namespace iBizProduct.Security
             {
                 // Build a ConnectionString to return based on the Environment. If it does not we want the Exception to bubble up.
                 var connectionString = new SqlConnectionStringBuilder();
-                connectionString.UserID = GetSetting( "MembershipUserId" );
-                connectionString.Password = Encoding.UTF8.GetString( Convert.FromBase64String( GetSetting( "MembershipPassword" ) ) );
                 connectionString.InitialCatalog = GetSetting( "MembershipInitialCatalog" );
-                connectionString.TrustServerCertificate = true;
                 connectionString.DataSource = GetSetting( "MembershipDataSource" );
+
+                if( GetSetting<bool>( "MembershipUseWindowsProfile" ) )
+                {
+                    connectionString.IntegratedSecurity = true;
+                }
+                else
+                {
+                    connectionString.UserID = GetSetting( "MembershipUserId" );
+                    connectionString.Password = Encoding.UTF8.GetString( Convert.FromBase64String( GetSetting( "MembershipPassword" ) ) );
+                    connectionString.TrustServerCertificate = true;
+                }
 
                 return connectionString.ConnectionString;
             }

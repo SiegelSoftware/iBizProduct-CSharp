@@ -11,9 +11,9 @@ namespace iBizProduct.Security
     public class iBizSecure
     {
         // Change these keys
-        private byte[] Key; 
-        private byte[] Vector; 
-        private int Salt; 
+        private byte[] Key;
+        private byte[] Vector;
+        private int Salt;
 
         private ICryptoTransform EncryptorTransform, DecryptorTransform;
         private System.Text.UTF8Encoding UTFEncoder;
@@ -25,8 +25,8 @@ namespace iBizProduct.Security
             RijndaelManaged rm = new RijndaelManaged();
 
             //Create an encryptor and a decryptor using our encryption method, key, and vector.
-            EncryptorTransform = rm.CreateEncryptor(this.Key, this.Vector);
-            DecryptorTransform = rm.CreateDecryptor(this.Key, this.Vector);
+            EncryptorTransform = rm.CreateEncryptor( this.Key, this.Vector );
+            DecryptorTransform = rm.CreateDecryptor( this.Key, this.Vector );
 
             //Used to translate bytes to text and vice versa
             UTFEncoder = new System.Text.UTF8Encoding();
@@ -54,27 +54,28 @@ namespace iBizProduct.Security
 
         /// ----------- The commonly used methods ------------------------------   
         /// Encrypt some text and return a string suitable for passing in a URL.
-        public string EncryptString(string TextValue)
+        public string EncryptString( string TextValue )
         {
-            return (TextValue != "") ? Convert.ToBase64String(Encrypt(TextValue)) : "";
+            return ( TextValue != "" ) ? Convert.ToBase64String( Encrypt( TextValue ) ) : "";
         }
 
         /// Encrypt some text and return an encrypted byte array.
         public byte[] Encrypt( string TextValue, int userDefineSalt = 0 )
         {
             //Translates our text value into a byte array.
-            Byte[] pepper = UTFEncoder.GetBytes(TextValue);
+            Byte[] pepper = UTFEncoder.GetBytes( TextValue );
 
-            if( userDefineSalt != 0 ) Salt = userDefineSalt;
-            
-            Byte[] salt = new byte[Salt];
+            if( userDefineSalt != 0 )
+                Salt = userDefineSalt;
+
+            Byte[] salt = new byte[ Salt ];
             RNGCryptoServiceProvider crypto = new RNGCryptoServiceProvider();
-            crypto.GetNonZeroBytes(salt);
-            Byte[] bytes = new byte[2 * Salt + pepper.Length];
-            System.Buffer.BlockCopy(salt, 0, bytes, 0, Salt);
-            System.Buffer.BlockCopy(pepper, 0, bytes, Salt, pepper.Length);
-            crypto.GetNonZeroBytes(salt);
-            System.Buffer.BlockCopy(salt, 0, bytes, Salt + pepper.Length, Salt);
+            crypto.GetNonZeroBytes( salt );
+            Byte[] bytes = new byte[ 2 * Salt + pepper.Length ];
+            System.Buffer.BlockCopy( salt, 0, bytes, 0, Salt );
+            System.Buffer.BlockCopy( pepper, 0, bytes, Salt, pepper.Length );
+            crypto.GetNonZeroBytes( salt );
+            System.Buffer.BlockCopy( salt, 0, bytes, Salt + pepper.Length, Salt );
 
             //Used to stream the data in and out of the CryptoStream.
             MemoryStream memoryStream = new MemoryStream();
@@ -84,15 +85,15 @@ namespace iBizProduct.Security
              * then read the encrypted result back from the stream.
              */
             #region Write the decrypted value to the encryption stream
-            CryptoStream cs = new CryptoStream(memoryStream, EncryptorTransform, CryptoStreamMode.Write);
-            cs.Write(bytes, 0, bytes.Length);
+            CryptoStream cs = new CryptoStream( memoryStream, EncryptorTransform, CryptoStreamMode.Write );
+            cs.Write( bytes, 0, bytes.Length );
             cs.FlushFinalBlock();
             #endregion
 
             #region Read encrypted value back out of the stream
             memoryStream.Position = 0;
-            byte[] encrypted = new byte[memoryStream.Length];
-            memoryStream.Read(encrypted, 0, encrypted.Length);
+            byte[] encrypted = new byte[ memoryStream.Length ];
+            memoryStream.Read( encrypted, 0, encrypted.Length );
             #endregion
 
             //Clean up.
@@ -103,9 +104,9 @@ namespace iBizProduct.Security
         }
 
         /// The other side: Decryption methods
-        public string DecryptString(string EncryptedString)
+        public string DecryptString( string EncryptedString )
         {
-            return (EncryptedString != "") ? Decrypt(Convert.FromBase64String(EncryptedString)) : "";
+            return ( EncryptedString != "" ) ? Decrypt( Convert.FromBase64String( EncryptedString ) ) : "";
         }
 
         public string Decrypt( string EncryptedValue, string userDefinedSalt = "0" )
@@ -116,26 +117,27 @@ namespace iBizProduct.Security
         /// Decryption when working with byte arrays.    
         public string Decrypt( byte[] EncryptedValue, int userDefineSalt = 0 )
         {
-            if( userDefineSalt != 0 ) Salt = userDefineSalt;
+            if( userDefineSalt != 0 )
+                Salt = userDefineSalt;
 
             #region Write the encrypted value to the decryption stream
             MemoryStream encryptedStream = new MemoryStream();
-            CryptoStream decryptStream = new CryptoStream(encryptedStream, DecryptorTransform, CryptoStreamMode.Write);
-            decryptStream.Write(EncryptedValue, 0, EncryptedValue.Length);
+            CryptoStream decryptStream = new CryptoStream( encryptedStream, DecryptorTransform, CryptoStreamMode.Write );
+            decryptStream.Write( EncryptedValue, 0, EncryptedValue.Length );
             decryptStream.FlushFinalBlock();
             #endregion
 
             #region Read the decrypted value from the stream.
             encryptedStream.Position = 0;
-            Byte[] decryptedBytes = new Byte[encryptedStream.Length];
-            encryptedStream.Read(decryptedBytes, 0, decryptedBytes.Length);
+            Byte[] decryptedBytes = new Byte[ encryptedStream.Length ];
+            encryptedStream.Read( decryptedBytes, 0, decryptedBytes.Length );
             encryptedStream.Close();
             #endregion
             // remove salt
             int len = decryptedBytes.Length - 2 * Salt;
-            Byte[] pepper = new Byte[len];
-            System.Buffer.BlockCopy(decryptedBytes, Salt, pepper, 0, len);
-            return UTFEncoder.GetString(pepper);
+            Byte[] pepper = new Byte[ len ];
+            System.Buffer.BlockCopy( decryptedBytes, Salt, pepper, 0, len );
+            return UTFEncoder.GetString( pepper );
         }
 
         public int GenerateSalt()
@@ -148,19 +150,19 @@ namespace iBizProduct.Security
         {
             try
             {
-                this.Key = Convert.FromBase64String( iBizProductSettings.ConfigKey() );
-                this.Vector = Convert.FromBase64String( iBizProductSettings.ConfigVector() );
-                this.Salt = BitConverter.ToInt32( Convert.FromBase64String( iBizProductSettings.ConfigSalt() ), 0 );
+                this.Key = Convert.FromBase64String( iBizProductSettings.ConfigKey );
+                this.Vector = Convert.FromBase64String( iBizProductSettings.ConfigVector );
+                this.Salt = BitConverter.ToInt32( Convert.FromBase64String( iBizProductSettings.ConfigSalt ), 0 );
             }
-            catch(iBizException)
+            catch( iBizException )
             {
                 // If any of the values above did not exist they will throw an iBizException. We will generate new values for the Config Manager
                 NewKeys();
 
-                // Thought about doing this recursively... but the possibility for an inifite loop didn't seem worth it.
-                this.Key = Convert.FromBase64String( iBizProductSettings.ConfigKey() );
-                this.Vector = Convert.FromBase64String( iBizProductSettings.ConfigVector() );
-                this.Salt = BitConverter.ToInt32( Convert.FromBase64String( iBizProductSettings.ConfigSalt() ), 0 );
+                // Thought about doing this recursively... but the possibility for an infinite loop didn't seem worth it.
+                this.Key = Convert.FromBase64String( iBizProductSettings.ConfigKey );
+                this.Vector = Convert.FromBase64String( iBizProductSettings.ConfigVector );
+                this.Salt = BitConverter.ToInt32( Convert.FromBase64String( iBizProductSettings.ConfigSalt ), 0 );
             }
         }
 
@@ -172,8 +174,8 @@ namespace iBizProduct.Security
         /// <returns></returns>
         public bool NewKeys( string name = "" )
         {
-            bool wasSuccessful = false; 
-            if ( name == "" || name == "ConfigKey" )
+            bool wasSuccessful = false;
+            if( name == "" || name == "ConfigKey" )
             {
                 var NewGuid = Guid.NewGuid().ToByteArray();
 

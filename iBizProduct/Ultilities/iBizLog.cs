@@ -17,7 +17,8 @@ namespace iBizProduct.Ultilities
             {
                 string logName = Environment.GetEnvironmentVariable( "EventLogName" );
 
-                if( String.IsNullOrEmpty( logName ) ) return "iBizProduct";
+                if( String.IsNullOrEmpty( logName ) )
+                    return "iBizProduct";
 
                 return logName;
             }
@@ -31,7 +32,8 @@ namespace iBizProduct.Ultilities
             {
                 string logSource = Environment.GetEnvironmentVariable( "EventLogSource" );
 
-                if( String.IsNullOrEmpty( logSource ) ) return "iBizProduct v3";
+                if( String.IsNullOrEmpty( logSource ) )
+                    return "iBizProduct v3";
 
                 return logSource;
             }
@@ -41,6 +43,11 @@ namespace iBizProduct.Ultilities
 
         static iBizLog()
         {
+            if( !EventLog.SourceExists( EventLogSource ) )
+            {
+                EventLog.CreateEventSource( new EventSourceCreationData( EventLogSource, EventLogName ) );
+            }
+
             log = new EventLog( EventLogName )
             {
                 Source = EventLogSource,

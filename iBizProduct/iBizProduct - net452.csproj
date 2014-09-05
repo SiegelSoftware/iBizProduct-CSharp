@@ -84,6 +84,8 @@
     <Compile Include="DataContracts\PricingModel.cs" />
     <Compile Include="DataContracts\Priority.cs" />
     <Compile Include="DataContracts\ProductAuthentication.cs" />
+    <Compile Include="MarketplaceException.cs" />
+    <Compile Include="Models\ProductSetting.cs" />
     <Compile Include="Models\Templates\EventBase.cs" />
     <Compile Include="Models\Templates\EventMessageBase.cs" />
     <Compile Include="Models\Templates\PageBase.cs" />
@@ -97,9 +99,11 @@
     <Compile Include="iBizProductSettings.cs" />
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\ProductContext.cs" />
+    <Compile Include="NullSettingValueException.cs" />
     <Compile Include="Security\EncryptionType.cs" />
     <Compile Include="Security\iBizSecure.cs" />
     <Compile Include="Security\iBizSqlMembershipProvider.cs" />
+    <Compile Include="SettingsBase.cs" />
     <Compile Include="Ultilities\DateTimeExtensions.cs" />
     <Compile Include="Ultilities\EventLogCollection.cs" />
     <Compile Include="Ultilities\EventLogger.cs" />

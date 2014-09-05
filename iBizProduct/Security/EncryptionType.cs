@@ -9,11 +9,16 @@ namespace iBizProduct.Security
         /// <summary>
         /// Use Base64 Encoding. This is the default method iBizProduct uses.
         /// </summary>
-        BASE64,
+        Base64,
 
         /// <summary>
         /// Use SHA Encryption.
         /// </summary>
-        SHA
+        SHA,
+
+        /// <summary>
+        /// No Encryption Used.
+        /// </summary>
+        None
     }
 }

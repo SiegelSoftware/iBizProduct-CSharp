@@ -5,11 +5,12 @@ namespace iBizProduct.Models
     public class ProductContext : DbContext
     {
         public ProductContext()
-            : base( "iBizProductSettings.GetProductConnectionString()" )
+            : base( iBizProductSettings.ProductConnectionString )
         {
 
         }
 
-        DbSet<Product> Products { get; set; }
+        public virtual DbSet<Product> Products { get; set; }
+        public virtual DbSet<ProductSetting> ProductSettings { get; set; }
     }
 }

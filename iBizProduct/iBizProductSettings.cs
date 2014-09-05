@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Specialized;
-using System.Configuration;
+using System.Data.SqlClient;
 using System.Diagnostics;
-using System.IO;
+using System.Linq;
 using System.Net.Mail;
-using iBizProduct.Ultilities;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using iBizProduct.Models;
 
 namespace iBizProduct
 {
@@ -14,18 +11,22 @@ namespace iBizProduct
     /// Provides a context that allows iBizProduct to work within the context of either a standalone product or
     /// Marketplace Product. 
     /// </summary>
-    public sealed class iBizProductSettings
+    public sealed class iBizProductSettings : SettingsBase
     {
+        private static Product Product { get; set; }
+        private static ProductContext productContext { get; set; }
 
-        private static string SettingsFile = Environment.GetFolderPath( Environment.SpecialFolder.UserProfile ) + "ProductSettings.ibpv3";
+        static iBizProductSettings()
+        {
+            if( IsMarketplaceApp && productContext == null )
+                productContext = new ProductContext();
+
+        }
 
         /// <summary>
-        /// This contains the settings that iBizProduct has to work with. 
-        /// </summary>
-        public static NameValueCollection Settings = new NameValueCollection();
-
-        /// <summary>
-        /// The Product Id from the settings that iBizProduct has to work with.
+        /// The Product Id from the settings that iBizProduct has to work with. For standalone
+        /// products this setting must be located within the standard Environmental Configurations.
+        /// For Marketplace Configurations you may set this value so that the correct settings are applied.
         /// </summary>
         public static int ProductId
         {
@@ -33,17 +34,31 @@ namespace iBizProduct
             {
                 if( IsMarketplaceApp )
                 {
-                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented" );
+                    return ProductId;
                 }
                 else
                 {
                     return GetSetting<int>( "ProductId" );
                 }
             }
+
+            set
+            {
+                if( IsMarketplaceApp )
+                {
+                    ProductId = value;
+                    Product = productContext.Products.FirstOrDefault( p => p.ProductId == value );
+                }
+                else
+                    throw new iBizException( "The ProductId may only be set for Marketplace Applications." );
+            }
         }
 
         /// <summary>
-        /// The External Key from the Product settings that iBizProuct has to work with.
+        /// The External Key from the Product settings that iBizProuct has to work with. If 
+        /// the application is configured as a Marketplace Application it will attempt to 
+        /// locate the Product Object from the Database Context and determine what the External
+        /// Key to use is based on the currently set ProductId.
         /// </summary>
         public static string ExternalKey
         {
@@ -51,17 +66,25 @@ namespace iBizProduct
             {
                 if( IsMarketplaceApp )
                 {
-                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
+                    if( Product != null )
+                    {
+                        return Product.ExternalKey;
+                    }
+                    else
+                    {
+                        throw new MarketplaceException( "ExternalKey", ProductId );
+                    }
                 }
                 else
                 {
-                    var ExternalKey = GetSetting<string>( "ExternalKey" );
-
-                    return ExternalKey;
+                    return GetSetting<string>( "ExternalKey" );
                 }
             }
         }
 
+        /// <summary>
+        /// Product Event Log Name
+        /// </summary>
         public static string EventLogName
         {
             get
@@ -72,13 +95,14 @@ namespace iBizProduct
                 }
                 else
                 {
-                    var EventLogName = GetSetting<string>( "EventLogName", "iBizProduct" );
-
-                    return EventLogName;
+                    return GetSetting<string>( "EventLogName", "iBizProduct" );
                 }
             }
         }
 
+        /// <summary>
+        /// Event Log Source
+        /// </summary>
         public static string EventLogSource
         {
             get
@@ -89,27 +113,25 @@ namespace iBizProduct
                 }
                 else
                 {
-                    var EventLogSource = GetSetting<string>( "EventLogSource", "iBizProduct" );
-
-                    return EventLogSource;
+                    return GetSetting<string>( "EventLogSource", "iBizProduct" );
                 }
             }
         }
 
+        /// <summary>
+        /// Event Log
+        /// </summary>
         public static EventLog EventLog
         {
             get
             {
-                var log = new EventLog();
-                log.Source = "iBizProduct v3";
-                log.Log = EventLogSource;
+                var log = new EventLog( EventLogName, ".", EventLogSource );
 
-
-                if( EventLog.SourceExists( log.Source ) )
+                if( EventLog.SourceExists( EventLogSource ) )
                 {
                     // We don't want to catch this here if the application does not have the appropriate 
                     // permissions to create the log. 
-                    EventLog.CreateEventSource( log.Source, EventLog.Log, "." );
+                    EventLog.CreateEventSource( new EventSourceCreationData( EventLogSource, EventLogName ) );
                 }
 
                 return log;
@@ -117,164 +139,74 @@ namespace iBizProduct
         }
 
         /// <summary>
-        /// The Smtp Server from the Product settings that iBizProuct has to work with.
+        /// The SMTP Server from the Product settings that iBizProuct has to work with.
         /// </summary>
         public static SmtpClient SmtpClient
         {
             get
             {
-                if( IsMarketplaceApp )
-                {
-                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
-                }
-                else
-                {
-                    var SmtpServer = GetSetting<string>( "SmtpServer", "localhost" );
-                    var SmtpPort = GetSetting<int>( "SmtpPort", 25 );
+                var SmtpServer = GetSetting<string>( "SmtpServer", "localhost" );
+                var SmtpPort = GetSetting<int>( "SmtpPort", 25 );
 
-                    var SmtpClient = new SmtpClient( SmtpServer, SmtpPort );
-
-                    return SmtpClient;
-                }
+                return new SmtpClient( SmtpServer, SmtpPort );
             }
         }
 
-        public static bool IsMarketplaceApp
+        /// <summary>
+        /// Product's Connection String
+        /// </summary>
+        public static string ProductConnectionString
         {
             get
             {
-                return Settings[ "Marketplace" ] == "true" ? true : false;
-            }
-        }
+                var connString = new SqlConnectionStringBuilder();
+                connString.DataSource = GetSetting<string>( "ProductDataSource", "localhost" );
+                connString.InitialCatalog = GetSetting<string>( "ProductDatabase", "iBizProduct" );
 
-        static iBizProductSettings()
-        {
-            ReadSettings();
-        }
-
-        internal static string ConfigKey()
-        {
-            string ConfigKey = Environment.GetEnvironmentVariable( "ConfigKey" );
-
-            if( ConfigKey == null )
-            {
-                ConfigKey = ConfigurationManager.AppSettings[ "ConfigKey" ];
-            }
-
-            if( ConfigKey == null ) throw new iBizException( "An error occured while getting the ConfigKey. Please be sure that the variable exists within the environment." );
-
-            return ConfigKey;
-        }
-
-        internal static string ConfigVector()
-        {
-            string ConfigVector = Environment.GetEnvironmentVariable( "ConfigVector" );
-
-            if( ConfigVector == null )
-            {
-                ConfigVector = ConfigurationManager.AppSettings[ "ConfigVector" ];
-            }
-
-            if( ConfigVector == null ) throw new iBizException( "An error occured while getting the ConfigVector. Please be sure that the variable exists within the environment." );
-
-            return ConfigVector;
-        }
-
-        internal static string ConfigSalt()
-        {
-            string ConfigSalt = Environment.GetEnvironmentVariable( "ConfigSalt" );
-
-            if( ConfigSalt == null )
-            {
-                ConfigSalt = ConfigurationManager.AppSettings[ "ConfigSalt" ];
-            }
-
-            if( ConfigSalt == null ) throw new iBizException( "An error occured while getting the ConfigSalt. Please be sure that the variable exists within the environment." );
-
-            return ConfigSalt;
-        }
-
-        public static void AddSetting( string key, string value )
-        {
-            if( Settings == null || Settings.Count == 0 )
-                ReadSettings();
-
-            Settings.Add( key, value );
-            WriteSettings();
-        }
-
-        public static string GetSetting( string key )
-        {
-            if( Settings == null || Settings.Count == 0 )
-                ReadSettings();
-
-            return Settings[ key ];
-        }
-
-        internal static void ReadSettings()
-        {
-            try
-            {
-                // We only want to read in the file assuming that it actually exists.
-                if( File.Exists( SettingsFile ) )
+                if( GetSetting<bool>( "ProductUseWindowsProfile", true ) )
                 {
-                    using( StreamReader r = new StreamReader( SettingsFile ) )
-                    {
-                        string json = r.ReadToEnd();
-                        Settings = JsonConvert.DeserializeObject<NameValueCollection>( json );
-                    }
+                    connString.IntegratedSecurity = true;
                 }
-            }
-            catch( Exception ex )
-            {
-                // This is most likely due to a parsing error.
-                iBizLog.WriteException( ex );
+                else
+                {
+                    connString.UserID = GetSetting<string>( "ProductDbUserId", "iBizProduct" );
+                    connString.Password = GetSetting<string>( "ProductDbPassword" );
+                }
+
+
+                return connString.ConnectionString;
             }
         }
 
-        internal static void WriteSettings()
+        /// <summary>
+        /// Is this a Marketplace Application. NOTE: There is currently no support for Marketplace Applications.
+        /// </summary>
+        public static bool IsMarketplaceApp { get { return Settings[ "Marketplace" ] == "true" ? true : false; } }
+
+        internal static string ConfigKey { get { return GetSetting<string>( "ConfigKey" ); } }
+
+        internal static string ConfigVector { get { return GetSetting<string>( "ConfigVector" ); } }
+
+        internal static string ConfigSalt { get { return GetSetting<string>( "ConfigSalt" ); } }
+
+        private static T GetMarketplaceSetting<T>( string SettingName )
+        {
+            var Setting = productContext.ProductSettings.FirstOrDefault( ps => ps.Key == SettingName );
+            if( Setting != null )
+                return ( T )Convert.ChangeType( Setting, typeof( T ) );
+            else
+                throw new NullSettingValueException( SettingName, ProductId );
+        }
+
+        private static T GetMarketplaceSetting<T>( string SettingName, T DefaultValue )
         {
             try
             {
-                var json = new JObject( Settings );
-
-                File.WriteAllText( SettingsFile, json.ToString() );
-            }
-            catch( Exception ex )
-            {
-                // This is most likely due to the application running without proper file permissions
-                iBizLog.WriteException( ex );
-            }
-        }
-
-        private static T GetSetting<T>( string SettingName )
-        {
-            string settingValue = Settings[ SettingName ];
-
-            if( String.IsNullOrEmpty( settingValue ) )
-                settingValue = Environment.GetEnvironmentVariable( SettingName );
-            
-            if( String.IsNullOrEmpty( settingValue ) )
-                settingValue = ConfigurationManager.AppSettings[ SettingName ];
-
-            if( String.IsNullOrEmpty( settingValue ) )
-            {
-                var NullException = new NullReferenceException( string.Format( "There is currently no definition that iBizProduct can use for: {0}.", SettingName ) );
-                throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
-            }
-
-            return ( T )Convert.ChangeType( settingValue, typeof( T ) );
-        }
-
-        private static T GetSetting<T>( string SettingName, T Default )
-        {
-            try
-            {
-                return GetSetting<T>( SettingName );
+                return GetMarketplaceSetting<T>( SettingName );
             }
             catch
             {
-                return Default;
+                return DefaultValue;
             }
         }
     }
