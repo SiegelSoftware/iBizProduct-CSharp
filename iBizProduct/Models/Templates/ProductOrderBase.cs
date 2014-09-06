@@ -13,8 +13,18 @@ namespace iBizProduct.Models.Templates
         public int ProductOrderId { get; set; }
 
         /// <summary>
-        /// ProductId of the ProductOrder. This allows for Marketplace Implementation.
+        /// The recurring cost of the Product Order
         /// </summary>
-        public int ProductId { get; set; }
+        public decimal Cost { get; set; }
+
+        /// <summary>
+        /// The setup cost of the Product Order
+        /// </summary>
+        public decimal Setup { get; set; }
+
+        /// <summary>
+        /// This is the name that you should use when you create the Product Order with the Panel.
+        /// </summary>
+        public string FriendlyName { get; set; }
     }
 }

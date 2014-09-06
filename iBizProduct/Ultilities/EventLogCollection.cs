@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) iBizVision - 2014
+// Author: Dan Siegel
+
+using System.Collections.Generic;
 
 namespace iBizProduct.Ultilities
 {

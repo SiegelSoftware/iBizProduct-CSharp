@@ -1,4 +1,9 @@
-﻿using System.Globalization;
+﻿// Copyright (c) iBizVision - 2014
+// Author: Dan Siegel
+
+using System;
+using System.Globalization;
+using iBizProduct.DataContracts;
 
 namespace iBizProduct.Ultilities
 {
@@ -37,6 +42,17 @@ namespace iBizProduct.Ultilities
         public static string UppercaseFirst( this string String )
         {
             return char.ToUpper( String[ 0 ] ) + String.Substring( 1 ).ToLower();
+        }
+
+        /// <summary>
+        /// Converts the Event Action recieved by the Backend API to an EventAction Enum
+        /// </summary>
+        /// <param name="OrderAction">Event Action string</param>
+        /// <returns>EventAction Enum</returns>
+        public static EventActions ConvertToEventAction( this string OrderAction )
+        {
+            OrderAction = OrderAction.Split( 'O' )[ 0 ];
+            return ( EventActions )Enum.Parse( typeof( EventActions ), OrderAction, true );
         }
     }
 }
