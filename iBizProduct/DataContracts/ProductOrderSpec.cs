@@ -65,7 +65,7 @@ namespace iBizProduct.DataContracts
         /// The Order Specifications that have been defined.
         /// </summary>
         /// <returns>Dictionary&lt;string,string> of the specifications</returns>
-        public Dictionary<string,object> OrderSpec()
+        public IDictionary<string,object> OrderSpec()
         {
             if( ProductOrderName != null )
                 POSpec.Add( "productorder_name", ProductOrderName );

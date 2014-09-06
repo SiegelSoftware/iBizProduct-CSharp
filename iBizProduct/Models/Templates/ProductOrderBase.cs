@@ -1,4 +1,7 @@
-﻿
+﻿// Copyright (c) iBizVision - 2014
+// Author: Dan Siegel
+
+using iBizProduct.DataContracts;
 namespace iBizProduct.Models.Templates
 {
     /// <summary>
@@ -7,6 +10,24 @@ namespace iBizProduct.Models.Templates
     /// </summary>
     public abstract class ProductOrderBase
     {
+        /// <summary>
+        /// Default Constructor
+        /// </summary>
+        public ProductOrderBase() { }
+
+        /// <summary>
+        /// Allows you to construct a ProductOrdre based on a ProductOrderSpec
+        /// </summary>
+        /// <param name="OrderSpec"></param>
+        public ProductOrderBase( ProductOrderSpec OrderSpec )
+        {
+            this.Cost = (decimal)OrderSpec.Cost;
+            this.Setup = (decimal)OrderSpec.Setup;
+            this.ProductOrderName = OrderSpec.ProductOrderName;
+            this.ProductOrderStatus = OrderSpec.ProductOrderStatus;
+            this.Notes = OrderSpec.Notes;
+        }
+
         /// <summary>
         /// ProductOrderId of the specific order. 
         /// </summary>
@@ -25,6 +46,16 @@ namespace iBizProduct.Models.Templates
         /// <summary>
         /// This is the name that you should use when you create the Product Order with the Panel.
         /// </summary>
-        public string FriendlyName { get; set; }
+        public string ProductOrderName { get; set; }
+
+        /// <summary>
+        /// The current status of the Order. i.e. Incomplete, Complete, In Progress
+        /// </summary>
+        public ProductOrderStatus? ProductOrderStatus { get; set; }
+
+        /// <summary>
+        /// Enter any notes related to your productorder
+        /// </summary>
+        public string Notes { get; set; }
     }
 }
