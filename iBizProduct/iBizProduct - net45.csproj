@@ -115,6 +115,7 @@
     <Compile Include="DataContracts\ProductOrderSpec.cs" />
     <Compile Include="DataContracts\ProductOrderStatus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Ultilities\ProductOrderUtility.cs" />
     <Compile Include="Ultilities\StringExtensions.cs" />
     <Compile Include="Ultilities\UnixTime.cs" />
   </ItemGroup>
