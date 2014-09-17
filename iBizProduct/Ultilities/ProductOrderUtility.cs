@@ -2,8 +2,18 @@
 
 namespace iBizProduct.Ultilities
 {
+    /// <summary>
+    /// Provides static utilities for working with Product Orders
+    /// </summary>
     public class ProductOrderUtility
     {
+        /// <summary>
+        /// Returns what the Product Order Status should be updated to based on a Product Order's current Order Status and what the Backend
+        /// Event to perform is.
+        /// </summary>
+        /// <param name="CurrentOrderStatus">Current ProductOrder Status</param>
+        /// <param name="ActionToPerform">What Event Action to perform</param>
+        /// <returns>New ProductOrder Status</returns>
         public static ProductOrderStatus GetNewOrderStatus( ProductOrderStatus CurrentOrderStatus, EventActions ActionToPerform )
         {
             switch( CurrentOrderStatus )

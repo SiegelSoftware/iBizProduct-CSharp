@@ -79,6 +79,7 @@
     <Compile Include="DataContracts\EventStatus.cs" />
     <Compile Include="DataContracts\Language.cs" />
     <Compile Include="DataContracts\OfferChainLink.cs" />
+    <Compile Include="DataContracts\OfferPrice.cs" />
     <Compile Include="DataContracts\OrderPricing.cs" />
     <Compile Include="DataContracts\PaymentFrequency.cs" />
     <Compile Include="DataContracts\PricingModel.cs" />

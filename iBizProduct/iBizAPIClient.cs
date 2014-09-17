@@ -280,6 +280,27 @@ namespace iBizProduct
 
         #endregion
 
+        #region CommerceManager/ProductOffer
+
+        public static OfferPrice GetPriceByOffer( int OfferId, bool Markup = false, int AccountId = 0 )
+        {
+            // Need Backend to accept Markup Flag
+            Dictionary<string, object> Params = new Dictionary<string, object>() {
+                { "external_key", iBizProductSettings.ExternalKey },
+                { "productoffer_id", OfferId }
+            };
+
+            if( AccountId > 0 ) Params.Add( "account_id", AccountId );
+
+            var result = iBizBE.APICall( "JSON/CommerceManager/ProductOffer", "ExternalProductOfferPrice", Params ).Result;
+
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+
+            return new OfferPrice( result );
+        }
+
+        #endregion
+
         #region Helper Functions
         /// <summary>
         /// This method sets the ProductAuthentication variables to the Session for the Product to be able to track
