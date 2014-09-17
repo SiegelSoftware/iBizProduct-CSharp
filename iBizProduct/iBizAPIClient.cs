@@ -55,6 +55,49 @@ namespace iBizProduct
         }
 
         /// <summary>
+        /// Edit your customer's order. This could be the pricing or the name of a productorder.
+        /// </summary>
+        /// <param name="ProductOrderId">The ProductOrder Id of the Product Order you wish to edit.</param>
+        /// <param name="productOrderSpec">The Specifications that need to change.</param>
+        /// <returns>A boolean indicating whether or not the edit was successful.</returns>
+        public static bool ProductOrderEdit( int ProductOrderId, ProductOrderSpec productOrderSpec )
+        {
+            Dictionary<string, object> Params = new Dictionary<string, object>() {
+                { "external_key", ApiKey },
+                { "productorder_id", ProductOrderId },
+                { "productorder_spec", productOrderSpec.OrderSpec() }
+            };
+
+            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params ).Result;
+
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+
+            return true;
+        }
+
+        /// <summary>
+        /// Used for Viewing information about a particular Purchase Order.
+        /// </summary>
+        /// <param name="ProductOrderId">Product Order ID</param>
+        /// <param name="InfoToReturn">Optional ProductOfferInfoToReturn</param>
+        /// <returns>Dictionary&lt;string, object&gt; with the requested View Object</returns>
+        public static JObject ProductOrderView( int ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
+        {
+            Dictionary<string, object> Params = new Dictionary<string, object>() {
+                { "external_key", ApiKey },
+                { "productorder_id", ProductOrderId },
+            };
+
+            if( InfoToReturn != null ) Params.Add( "info_to_return", InfoToReturn );
+
+            var view = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
+
+            if( view[ "error" ] != null ) throw new iBizException( view[ "error" ].ToString() );
+
+            return view;
+        }
+
+        /// <summary>
         /// This will instruct the Panel to make a one time charge to a client. This could be due to a customer modifying the terms of 
         /// their services with your product or an On Demand payment.
         /// </summary>
@@ -81,30 +124,12 @@ namespace iBizProduct
             Params.Add( "due_now", ( ( DueNow == true ) ? 1 : 0 ).ToString() );
 
             var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params ).Result;
-            var ResponseCode = int.Parse( result[ "response_code" ].ToString() );
-
-            return ( BillResponse )ResponseCode;            
-        }
-
-        /// <summary>
-        /// Edit your customer's order. This could be the pricing or the name of a productorder.
-        /// </summary>
-        /// <param name="ProductOrderId">The ProductOrder Id of the Product Order you wish to edit.</param>
-        /// <param name="productOrderSpec">The Specifications that need to change.</param>
-        /// <returns>A boolean indicating whether or not the edit was successful.</returns>
-        public static bool ProductOrderEdit( int ProductOrderId, ProductOrderSpec productOrderSpec )
-        {
-            Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ApiKey },
-                { "productorder_id", ProductOrderId },
-                { "productorder_spec", productOrderSpec.OrderSpec() }
-            };
-
-            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params ).Result;
 
             if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
 
-            return true;
+            var ResponseCode = int.Parse( result[ "response_code" ].ToString() );
+
+            return ( BillResponse )ResponseCode;            
         }
 
         /// <summary>
@@ -126,7 +151,11 @@ namespace iBizProduct
 
             var ChargeDate = new DateTime();
 
-            return ChargeDate.ConvertFromUnixTime( int.Parse( result[ "next_charge_date" ].ToString() ) );
+            int NextChargeDate;
+            if( !int.TryParse( result[ "next_charge_date" ].ToString(), out NextChargeDate ) )
+                throw new iBizException( "Unable to Parse Next Charge Date" );
+
+            return ChargeDate.ConvertFromUnixTime( NextChargeDate );
         }
 
         /// <summary>
@@ -150,6 +179,26 @@ namespace iBizProduct
         }
 
         /// <summary>
+        /// Return the pricing for the provided product order ID (basically looks up the purchaser and calls ExternalPriceFromPurchase).
+        /// </summary>
+        /// <param name="ProductOrderId">This is the id of the ProductOrder to generate the list of dependent orders for.</param>
+        /// <returns>Product Details and Offer Chain</returns>
+        public static OrderPricing ProductOrderPricing( int ProductOrderId )
+        {
+            Dictionary<string, object> Params = new Dictionary<string, object>() 
+            {
+                { "external_key", ApiKey },
+                { "productorder_id", ProductOrderId }
+            };
+
+            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalProductOrderPricing", Params ).Result;
+
+            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+
+            return new OrderPricing( result );
+        }
+
+        /// <summary>
         /// Open a case with the owner (end user) of a particular order. (Note: Use $$OFFER_NAME$$ in case fields to substitute the name of the offer at the level of owner.)
         /// </summary>
         /// <param name="ProductOrderId">The id of the productorder to open a case for.</param>
@@ -169,26 +218,6 @@ namespace iBizProduct
             if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
 
             return int.Parse( result[ "new_id" ].ToString() );
-        }
-
-        /// <summary>
-        /// Return the pricing for the provided product order ID (basically looks up the purchaser and calls ExternalPriceFromPurchase).
-        /// </summary>
-        /// <param name="ProductOrderId">This is the id of the ProductOrder to generate the list of dependent orders for.</param>
-        /// <returns>Product Details and Offer Chain</returns>
-        public static OrderPricing ProductOrderPricing( int ProductOrderId )
-        {
-            Dictionary<string, object> Params = new Dictionary<string, object>() 
-            {
-                { "external_key", ApiKey },
-                { "productorder_id", ProductOrderId }
-            };
-
-            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalProductOrderPricing", Params ).Result;
-
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
-
-            return new OrderPricing( result );
         }
 
         /// <summary>
@@ -216,28 +245,6 @@ namespace iBizProduct
             return int.Parse( result[ "effected_rows " ].ToString() );
         }
 
-        /// <summary>
-        /// Used for Viewing information about a particular Purchase Order.
-        /// </summary>
-        /// <param name="ProductOrderId">Product Order ID</param>
-        /// <param name="InfoToReturn">Optional ProductOfferInfoToReturn</param>
-        /// <returns>Dictionary&lt;string, object&gt; with the requested View Object</returns>
-        public static JObject ProductOrderView( int ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
-        {
-            Dictionary<string, object> Params = new Dictionary<string, object>() {
-                { "external_key", ApiKey },
-                { "productorder_id", ProductOrderId },
-            };
-
-            if( InfoToReturn != null ) Params.Add( "info_to_return", InfoToReturn );
-
-            var view = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
-
-            if( view[ "error" ] != null ) throw new iBizException( view[ "error" ].ToString() );
-
-            return view;
-        }
-
         #endregion
 
         #region CommerceManager/ProductManager/ProductOrder/Event
@@ -254,14 +261,15 @@ namespace iBizProduct
         /// <param name="Status">The status for the event, COMPLETE or ERROR.</param>
         /// <param name="Message">A message to include with errors (this is customer visable).</param>
         /// <returns>Indicates whether or not the update was successful</returns>
-        public static bool UpdateEvent( int EventId, EventStatus Status, string Message )
+        public static bool UpdateEvent( int EventId, EventStatus Status, string Message = null )
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", iBizProductSettings.ExternalKey },
                 { "productorderevent_id", EventId },
-                { "message", Message },
                 { "status", Status.ToString() }
             };
+
+            if( !String.IsNullOrEmpty( Message ) ) Params.Add( "message", Message );
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder/Event", "ExternalUpdateEvent", Params ).Result;
 
