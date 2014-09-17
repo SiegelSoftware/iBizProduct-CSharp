@@ -101,7 +101,7 @@ namespace iBizProduct
         /// This will instruct the Panel to make a one time charge to a client. This could be due to a customer modifying the terms of 
         /// their services with your product or an On Demand payment.
         /// </summary>
-        /// <param name="CycleBeginData"></param>
+        /// <param name="CycleBeginDate"></param>
         /// <param name="CycleEndDate"></param>
         /// <param name="OneTimeCost"></param>
         /// <param name="ProductOrderId"></param>
@@ -109,12 +109,12 @@ namespace iBizProduct
         /// <param name="DescriptionAddOn"></param>
         /// <param name="DueNow"></param>
         /// <returns>BillResponse Enum Value</returns>
-        public static BillResponse ProductOrderBillOrderAddOneTime( DateTime CycleBeginData, DateTime CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, bool DueNow = true )
+        public static BillResponse ProductOrderBillOrderAddOneTime( DateTime CycleBeginDate, DateTime CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, bool DueNow = true )
         {
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
-                { "cycle_begin_date", UnixTime.ConvertToUnixTime( CycleBeginData ) },
+                { "cycle_begin_date", UnixTime.ConvertToUnixTime( CycleBeginDate ) },
                 { "cycle_end_date", UnixTime.ConvertToUnixTime( CycleEndDate ) },
                 { "one_time_cost", OneTimeCost }
             };
