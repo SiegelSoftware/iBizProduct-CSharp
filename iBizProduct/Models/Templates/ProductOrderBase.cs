@@ -1,6 +1,8 @@
 ﻿// Copyright (c) iBizVision - 2014
 // Author: Dan Siegel
 
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using iBizProduct.DataContracts;
 namespace iBizProduct.Models.Templates
 {
@@ -29,8 +31,10 @@ namespace iBizProduct.Models.Templates
         }
 
         /// <summary>
-        /// ProductOrderId of the specific order. 
+        /// This is the Backend Product Order Id generated when you call the iBizAPIClient's ProductOrderAdd function.
         /// </summary>
+        [Key]
+        [DatabaseGenerated( DatabaseGeneratedOption.None )]
         public int ProductOrderId { get; set; }
 
         /// <summary>

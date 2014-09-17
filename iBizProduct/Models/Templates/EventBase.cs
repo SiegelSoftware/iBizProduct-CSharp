@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright (c) iBizVision - 2014
+// Author: Dan Siegel
+
+using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using iBizProduct.DataContracts;
 
@@ -12,10 +16,12 @@ namespace iBizProduct.Models.Templates
         /// <summary>
         /// The Event Id sent by the Backend iBizAPI
         /// </summary>
+        [Key]
+        [DatabaseGenerated( DatabaseGeneratedOption.None )]
         public int EventId { get; set; }
 
         /// <summary>
-        /// The Associated ProductOrderId
+        /// Associated Product Order Id
         /// </summary>
         public int ProductOrderId { get; set; }
 
