@@ -1,7 +1,7 @@
 This is iBizProduct v3!!! Welcome...
 
 At the heart of this library is the iBizAPIClient. From that single class you can easily call any of the API Functions that are 
-avaialable to a Product.
+available to a Product.
 
 This also includes all of the data contracts you will require and a number of utilities to make your life easier. Lastly there are 
 some base models that should assist you in developing your database schema. Please note that there is no Marketplace support in
@@ -33,7 +33,7 @@ database for Marketplace implementations.
 
 -----------------------------------------------------------------------------------------------------------------------------------
 Utilities
-DateTimeExtensions: Allow you to convert to & from Linux Timestamps from a give DateTime Instnace
+DateTimeExtensions: Allow you to convert to & from Linux Timestamps from a give DateTime Instance
 String Extensions: Adds functions to Convert first letters to UpperCase and to convert the string to an EventAction Enum
 UnixTime: Provides a framework for working with UnixTimes
 ProductOrderUtility: Provides an ability to determine what the appropriate status should be for a particular order.

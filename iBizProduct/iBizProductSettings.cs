@@ -181,7 +181,7 @@ namespace iBizProduct
         /// <summary>
         /// Is this a Marketplace Application. NOTE: There is currently no support for Marketplace Applications.
         /// </summary>
-        public static bool IsMarketplaceApp { get { return Settings[ "Marketplace" ] == "true" ? true : false; } }
+        public static bool IsMarketplaceApp { get { return Settings[ "Marketplace" ].Value == "true" ? true : false; } }
 
         internal static string ConfigKey { get { return GetSetting<string>( "ConfigKey" ); } }
 

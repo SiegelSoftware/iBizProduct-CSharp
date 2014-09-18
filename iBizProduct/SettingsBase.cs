@@ -2,10 +2,11 @@
 // Author: Dan Siegel
 
 using System;
-using System.Collections.Specialized;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Text;
+using iBizProduct.Models.Templates;
 using iBizProduct.Security;
 using iBizProduct.Ultilities;
 using Newtonsoft.Json;
@@ -23,7 +24,7 @@ namespace iBizProduct
         /// <summary>
         /// Application Name. 
         /// </summary>
-        public const string ApplicationName = "iBizProduct v3";
+        public static string ApplicationName = "iBizProduct v3";
 
         /// <summary>
         /// Settings File location. Default is in the MyDocuments folder of the user executing the application.
@@ -33,7 +34,9 @@ namespace iBizProduct
         /// <summary>
         /// This contains the settings that iBizProduct has to work with. 
         /// </summary>
-        public static NameValueCollection Settings = new NameValueCollection();
+        public static ProductSettings Settings;
+
+        public static ProductEntity ProductContext;
 
         static SettingsBase()
         {
@@ -45,12 +48,18 @@ namespace iBizProduct
         /// </summary>
         /// <param name="key">Settings Key</param>
         /// <param name="value">Settings Value</param>
-        public static void AddSetting( string key, string value )
+        public static void AddSetting( string key, string value, EncryptionType encryption = EncryptionType.None )
         {
             if( Settings == null || Settings.Count == 0 )
                 ReadSettings();
 
-            Settings.Add( key, value );
+            var settingValue = new ProductSettingValue()
+            {
+                Encryption = encryption,
+                Value = value
+            };
+
+            Settings.Add( key, settingValue );
             WriteSettings();
         }
 
@@ -67,7 +76,7 @@ namespace iBizProduct
                     using( StreamReader r = new StreamReader( SettingsFile ) )
                     {
                         string json = r.ReadToEnd();
-                        Settings = JsonConvert.DeserializeObject<NameValueCollection>( json );
+                        Settings = JsonConvert.DeserializeObject<ProductSettings>( json );
                     }
                 }
             }
@@ -108,18 +117,27 @@ namespace iBizProduct
         /// <exception cref="iBizException">Throws an iBizException due to a NullReference Exception if no value can be found.</exception>
         public static T GetSetting<T>( string SettingName, EncryptionType EncryptionType = EncryptionType.None )
         {
-            string settingValue = Settings[ SettingName ];
-
-            if( String.IsNullOrEmpty( settingValue ) )
-                settingValue = Environment.GetEnvironmentVariable( SettingName );
-
-            if( String.IsNullOrEmpty( settingValue ) )
-                settingValue = ConfigurationManager.AppSettings[ SettingName ];
+            var settingObject = Settings[ SettingName ];
+            string settingValue = settingObject.Value;
 
             if( String.IsNullOrEmpty( settingValue ) )
             {
-                var NullException = new NullReferenceException( string.Format( "There is currently no definition that {0} can use for: {1}.", ApplicationName, SettingName ) );
-                throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
+                settingValue = Environment.GetEnvironmentVariable( SettingName );
+
+                if( String.IsNullOrEmpty( settingValue ) )
+                {
+                    settingValue = ConfigurationManager.AppSettings[ SettingName ];
+
+                    if( String.IsNullOrEmpty( settingValue ) )
+                    {
+                        var NullException = new NullReferenceException( string.Format( "There is currently no definition that {0} can use for: {1}.", ApplicationName, SettingName ) );
+                        throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
+                    }
+                }
+            }
+            else
+            {
+                EncryptionType = settingObject.Encryption;
             }
 
             var setting = ( T )Convert.ChangeType( settingValue, typeof( T ) );
@@ -152,6 +170,35 @@ namespace iBizProduct
             try
             {
                 return GetSetting<T>( SettingName, EncryptionType );
+            }
+            catch
+            {
+                return Default;
+            }
+        }
+
+        public static T GetRuntimeSetting<T>( string SettingName )
+        {
+            if( ProductContext == null )
+            {
+                var e = new NullSettingValueException( "Product Context was not initialized" );
+                throw new iBizException( "The current configuration does not allow for getting runtime settings." );
+            }
+
+            var config = ProductContext.RuntimeConfigs.FirstOrDefault( rc => rc.Key == SettingName );
+
+            if( config != null )
+                return ( T )Convert.ChangeType( config.Value, typeof( T ) );
+
+            var NullException = new NullReferenceException( string.Format( "There is currently no definition that {0} can use for: {1}.", ApplicationName, SettingName ) );
+            throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
+        }
+
+        public static T GetRuntimeSetting<T>( string SettingName, T Default )
+        {
+            try
+            {
+                return GetRuntimeSetting<T>( SettingName );
             }
             catch
             {

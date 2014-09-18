@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>iBizProduct</RootNamespace>
-    <AssemblyName>iBizProduct</AssemblyName>
+    <AssemblyName>iBizProduct.Common</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -33,7 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\Release\lib\net452\iBizProduct.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\lib\net452\iBizProduct.Common.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -108,6 +108,8 @@
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\ProductContext.cs" />
     <Compile Include="NullSettingValueException.cs" />
+    <Compile Include="ProductSettings.cs" />
+    <Compile Include="ProductSettingValue.cs" />
     <Compile Include="Security\EncryptionType.cs" />
     <Compile Include="Security\iBizSecure.cs" />
     <Compile Include="Security\iBizSqlMembershipProvider.cs" />
