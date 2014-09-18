@@ -125,14 +125,21 @@ namespace iBizProduct
         {
             get
             {
-                var log = new EventLog( EventLogName, ".", EventLogSource );
-
                 if( EventLog.SourceExists( EventLogSource ) )
                 {
-                    // We don't want to catch this here if the application does not have the appropriate 
-                    // permissions to create the log. 
-                    EventLog.CreateEventSource( new EventSourceCreationData( EventLogSource, EventLogName ) );
+                    try
+                    {
+                        // We want to catch this and rethrow as an iBizException if the application does not have the appropriate 
+                        // permissions to create the log. 
+                        EventLog.CreateEventSource( new EventSourceCreationData( EventLogSource, EventLogName ) );
+                    }
+                    catch( Exception ex )
+                    {
+                        throw new iBizException( "Unable to create the Event Log.", ex );
+                    }
                 }
+
+                var log = new EventLog( EventLogName, ".", EventLogSource );
 
                 return log;
             }
