@@ -36,7 +36,7 @@ namespace iBizProduct
         /// </summary>
         public static ProductSettings Settings;
 
-        public static ProductEntity ProductContext;
+        //public static ProductEntity ProductContext;
 
         static SettingsBase()
         {
@@ -131,7 +131,7 @@ namespace iBizProduct
                     if( String.IsNullOrEmpty( settingValue ) )
                     {
                         var NullException = new NullReferenceException( string.Format( "There is currently no definition that {0} can use for: {1}.", ApplicationName, SettingName ) );
-                        throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
+                        throw new NullSettingValueException( SettingName, NullException );
                     }
                 }
             }
@@ -171,40 +171,44 @@ namespace iBizProduct
             {
                 return GetSetting<T>( SettingName, EncryptionType );
             }
-            catch
+            catch( NullSettingValueException )
             {
                 return Default;
             }
-        }
-
-        public static T GetRuntimeSetting<T>( string SettingName )
-        {
-            if( ProductContext == null )
+            catch( Exception ex )
             {
-                var e = new NullSettingValueException( "Product Context was not initialized" );
-                throw new iBizException( "The current configuration does not allow for getting runtime settings." );
-            }
-
-            var config = ProductContext.RuntimeConfigs.FirstOrDefault( rc => rc.Key == SettingName );
-
-            if( config != null )
-                return ( T )Convert.ChangeType( config.Value, typeof( T ) );
-
-            var NullException = new NullReferenceException( string.Format( "There is currently no definition that {0} can use for: {1}.", ApplicationName, SettingName ) );
-            throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
-        }
-
-        public static T GetRuntimeSetting<T>( string SettingName, T Default )
-        {
-            try
-            {
-                return GetRuntimeSetting<T>( SettingName );
-            }
-            catch
-            {
-                return Default;
+                throw new NullSettingValueException( string.Format( "Unable to get the value for {0}", SettingName ), ex );
             }
         }
+
+        //public static T GetRuntimeSetting<T>( string SettingName )
+        //{
+        //    if( ProductContext == null )
+        //    {
+        //        var e = new NullSettingValueException( "Product Context was not initialized" );
+        //        throw new iBizException( "The current configuration does not allow for getting runtime settings." );
+        //    }
+
+        //    var config = ProductContext.RuntimeConfigs.FirstOrDefault( rc => rc.Key == SettingName );
+
+        //    if( config != null )
+        //        return ( T )Convert.ChangeType( config.Value, typeof( T ) );
+
+        //    var NullException = new NullReferenceException( string.Format( "There is currently no definition that {0} can use for: {1}.", ApplicationName, SettingName ) );
+        //    throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
+        //}
+
+        //public static T GetRuntimeSetting<T>( string SettingName, T Default )
+        //{
+        //    try
+        //    {
+        //        return GetRuntimeSetting<T>( SettingName );
+        //    }
+        //    catch
+        //    {
+        //        return Default;
+        //    }
+        //}
 
         private static T ConvertTo<T>( T Setting )
         {

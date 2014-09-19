@@ -44,8 +44,21 @@ namespace iBizProduct
         {
             this.EntryType = LogType;
 
-            if( String.IsNullOrEmpty( LogName ) )
-                this.iBizEventLog.Log = LogName;
+            if( !String.IsNullOrEmpty( LogName ) && !String.IsNullOrEmpty( EventLogSource ) )
+            {
+                if( EventLog.SourceExists( EventLogSource ) )
+                {
+                    try
+                    {
+                        // We want to catch this and rethrow as an iBizException if the application does not have the appropriate 
+                        // permissions to create the log. 
+                        EventLog.CreateEventSource( new EventSourceCreationData( EventLogSource, LogName ) );
+                        this.iBizEventLog.Log = LogName;
+                    }
+                    catch( Exception )
+                    { }
+                }
+            }
 
             LogError( message ); 
         }
@@ -56,10 +69,10 @@ namespace iBizProduct
 
             string ErrorMessage = "Exception thrown: " + this.GetType() + "\r\n\r\n" +
                 "Message: " + this.Message + "\r\n" +
-                "Stack Trace:\r\n" + this.StackTrace + "\r\n" + LogInnerException( this.InnerException );
+                "Stack Trace:\r\n" + this.StackTrace + "\r\n" + LogException( this.InnerException );
 
-
-            iBizEventLog.WriteEntry( ErrorMessage, EventLogEntryType.Error, eventId );
+            if( iBizEventLog == null )
+                iBizEventLog.WriteEntry( ErrorMessage, EventLogEntryType.Error, eventId );
 
             // The following is considered depricated and will be removed in the near future. 
             Console.WriteLine( message );
@@ -72,13 +85,9 @@ namespace iBizProduct
 
                 w = File.AppendText( logFile );
                 w.Write( "\r\nLog Entry : " );
-                w.WriteLine( "{0} {1}", DateTime.Now.ToLongTimeString(),
-                    DateTime.Now.ToLongDateString() );
+                w.WriteLine( "{0} {1}", DateTime.Now.ToLongTimeString(), DateTime.Now.ToLongDateString() );
                 w.WriteLine( "  :" );
-                w.WriteLine( "  :{0}", "Exception Thrown: " + this.GetType() );
-                w.WriteLine( "  :{0}", "Message: " + this.Message );
-                w.WriteLine( "  :{0}", "Stack Trace:\r\n" + this.StackTrace );
-                LogInnerException( ref w, this.InnerException );
+                w.WriteLine( LogException( this ) );
                 w.WriteLine( "-------------------------------" );
             }
             finally
@@ -87,30 +96,17 @@ namespace iBizProduct
             }
         }
 
-        private static string LogInnerException( Exception ex )
+        private static string LogException( Exception ex, bool InnerException = false )
         {
-            string message = "Inner Exception" + "\r\n" +
-                "Exception Thrown: " + ex.GetType() + "\r\n" +
-                "Message: " + ex.Message + "\r\n" +
-                "Stack Trace:\r\n" + ex.StackTrace + "\r\n";
+            string message = string.Format( "  :Exception Thrown: {0}\r\n  :Message: {1}\r\n  :Stack Trace: {2}\r\n", ex.GetType(), ex.Message, ex.StackTrace );
+
+            if( InnerException )
+                message = "Inner Exception:\r\n" + message;
             
             if( ex.InnerException != null )
-                message += LogInnerException( ex );
+                message += LogException( ex, true );
 
             return message;
-        }
-
-        private static void LogInnerException( ref StreamWriter w, Exception ex )
-        {
-            if( ex != null )
-            {
-                w.WriteLine( "\r\n  :{0}", "Inner Exception" );
-                w.WriteLine( "  :{0}", "Exception Thrown: " + ex.GetType() );
-                w.WriteLine( "  :{0}", "Message: " + ex.Message );
-                w.WriteLine( "  :{0}", "Stack Trace:\r\n" + ex.StackTrace );
-
-                LogInnerException( ref w, ex.InnerException );
-            }
         }
     }
 }

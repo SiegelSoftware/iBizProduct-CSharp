@@ -133,9 +133,9 @@ namespace iBizProduct
                         // permissions to create the log. 
                         EventLog.CreateEventSource( new EventSourceCreationData( EventLogSource, EventLogName ) );
                     }
-                    catch( Exception ex )
+                    catch( Exception )
                     {
-                        throw new iBizException( "Unable to create the Event Log.", ex );
+                        return null;
                     }
                 }
 
