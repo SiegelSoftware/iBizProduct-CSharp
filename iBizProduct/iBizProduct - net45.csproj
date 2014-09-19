@@ -103,6 +103,8 @@
     <Compile Include="Models\ProductSetting.cs" />
     <Compile Include="Models\Templates\EventBase.cs" />
     <Compile Include="Models\Templates\EventMessageBase.cs" />
+    <Compile Include="Models\Templates\FAQBase.cs" />
+    <Compile Include="Models\Templates\FAQMessageBase.cs" />
     <Compile Include="Models\Templates\MarketplaceProductOrderBase.cs" />
     <Compile Include="Models\Templates\PageBase.cs" />
     <Compile Include="Models\Templates\ProductOrderBase.cs" />
