@@ -87,6 +87,7 @@
     <Compile Include="DataContracts\ProductAuthentication.cs" />
     <Compile Include="Http\APIClient.cs" />
     <Compile Include="iBizAPIClient.cs" />
+    <Compile Include="iBizAPIException.cs" />
     <Compile Include="iBizBE.cs" />
     <Compile Include="iBizException.cs" />
     <Compile Include="DataContracts\InfoToReturn.cs" />

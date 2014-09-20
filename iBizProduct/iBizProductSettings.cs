@@ -14,13 +14,19 @@ namespace iBizProduct
     public sealed class iBizProductSettings : SettingsBase
     {
         private static Product Product { get; set; }
-        private static ProductContext productContext { get; set; }
-
-        static iBizProductSettings()
+        private static ProductContext productContext
         {
-            if( IsMarketplaceApp && productContext == null )
-                productContext = new ProductContext();
+            get
+            {
+                if( productContext == null )
+                    productContext = new ProductContext();
 
+                return productContext;
+            }
+            set
+            {
+                productContext = value;
+            }
         }
 
         /// <summary>
