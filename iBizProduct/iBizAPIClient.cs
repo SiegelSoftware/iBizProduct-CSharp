@@ -49,13 +49,14 @@ namespace iBizProduct
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalAdd", Params ).Result;
 
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+            if( result[ "error" ] != null )
+                throw new iBizException( result[ "error" ].ToString() );
 
             return int.Parse( result[ "productorder_id" ].ToString() );
         }
 
         /// <summary>
-        /// Edit your customer's order. This could be the pricing or the name of a productorder.
+        /// Edit your customer's order. This could be the pricing or the name of a ProductOrder.
         /// </summary>
         /// <param name="ProductOrderId">The ProductOrder Id of the Product Order you wish to edit.</param>
         /// <param name="productOrderSpec">The Specifications that need to change.</param>
@@ -70,7 +71,8 @@ namespace iBizProduct
 
             var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params ).Result;
 
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+            if( result[ "error" ] != null )
+                throw new iBizException( result[ "error" ].ToString() );
 
             return true;
         }
@@ -88,11 +90,13 @@ namespace iBizProduct
                 { "productorder_id", ProductOrderId },
             };
 
-            if( InfoToReturn != null ) Params.Add( "info_to_return", InfoToReturn );
+            if( InfoToReturn != null )
+                Params.Add( "info_to_return", InfoToReturn );
 
             var view = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
 
-            if( view[ "error" ] != null ) throw new iBizException( view[ "error" ].ToString() );
+            if( view[ "error" ] != null )
+                throw new iBizException( view[ "error" ].ToString() );
 
             return view;
         }
@@ -119,17 +123,20 @@ namespace iBizProduct
                 { "one_time_cost", OneTimeCost }
             };
 
-            if( DetailAddon != null ) Params.Add( "detail_addon", DetailAddon );
-            if( DescriptionAddOn != null ) Params.Add( "description_addon", DescriptionAddOn );
+            if( DetailAddon != null )
+                Params.Add( "detail_addon", DetailAddon );
+            if( DescriptionAddOn != null )
+                Params.Add( "description_addon", DescriptionAddOn );
             Params.Add( "due_now", ( ( DueNow == true ) ? 1 : 0 ).ToString() );
 
             var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params ).Result;
 
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+            if( result[ "error" ] != null )
+                throw new iBizException( result[ "error" ].ToString() );
 
             var ResponseCode = int.Parse( result[ "response_code" ].ToString() );
 
-            return ( BillResponse )ResponseCode;            
+            return ( BillResponse )ResponseCode;
         }
 
         /// <summary>
@@ -147,7 +154,8 @@ namespace iBizProduct
 
             var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalGetNextChargeDate", Params ).Result;
 
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+            if( result[ "error" ] != null )
+                throw new iBizException( result[ "error" ].ToString() );
 
             var ChargeDate = new DateTime();
 
@@ -159,9 +167,9 @@ namespace iBizProduct
         }
 
         /// <summary>
-        /// Get the language of the account that ownes the provided order.
+        /// Get the language of the account that owns the provided order.
         /// </summary>
-        /// <param name="ProductOrderId">The id of the productorder to get the language for.</param>
+        /// <param name="ProductOrderId">The id of the ProductOrder to get the language for.</param>
         /// <returns>The language of the owner.</returns>
         public static Language GetOwnerLanguage( int ProductOrderId )
         {
@@ -173,9 +181,10 @@ namespace iBizProduct
 
             var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalGetOwnerLanguage", Params ).Result;
 
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+            if( result[ "error" ] != null )
+                throw new iBizException( result[ "error" ].ToString() );
 
-            return (Language)Enum.Parse( typeof( Language ), result[ "language " ].ToString() );
+            return ( Language )Enum.Parse( typeof( Language ), result[ "language " ].ToString() );
         }
 
         /// <summary>
@@ -193,7 +202,8 @@ namespace iBizProduct
 
             var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalProductOrderPricing", Params ).Result;
 
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
+            if( result[ "error" ] != null )
+                throw new iBizException( result[ "error" ].ToString() );
 
             return new OrderPricing( result );
         }
@@ -201,7 +211,7 @@ namespace iBizProduct
         /// <summary>
         /// Open a case with the owner (end user) of a particular order. (Note: Use $$OFFER_NAME$$ in case fields to substitute the name of the offer at the level of owner.)
         /// </summary>
-        /// <param name="ProductOrderId">The id of the productorder to open a case for.</param>
+        /// <param name="ProductOrderId">The id of the ProductOrder to open a case for.</param>
         /// <param name="CaseSpec">The spec for the case added</param>
         /// <returns>The id of the case added</returns>
         public static int ProductOpenCaseWithOwner( int ProductOrderId, CaseSpec CaseSpec )
@@ -224,7 +234,7 @@ namespace iBizProduct
         /// Update a case with the owner (end user) of a particular order (usually a case previously created with ExternalOpenCaseWithOwner). 
         /// (Note: Use $$OFFER_NAME$$ in case fields to substitute the name of the offer at the level of owner.)
         /// </summary>
-        /// <param name="ProductOrderId">The id of the productorder to update a case for.</param>
+        /// <param name="ProductOrderId">The id of the ProductOrder to update a case for.</param>
         /// <param name="CaseId">The id of the case to update.</param>
         /// <param name="CaseSpec">The spec for the case edited</param>
         /// <returns>The affected rows</returns>
@@ -306,7 +316,7 @@ namespace iBizProduct
         /// This method sets the ProductAuthentication variables to the Session for the Product to be able to track
         /// and handle. It also verifies that the session the user has is valid.
         /// </summary>
-        /// <param name="authentication">Authentication Paramaters</param>
+        /// <param name="authentication">Authentication Parameters</param>
         /// <returns>Boolean to indicate a valid session</returns>
         public static bool AuthenticateUser( ProductAuthentication authentication )
         {

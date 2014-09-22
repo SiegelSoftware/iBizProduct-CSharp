@@ -23,8 +23,8 @@ namespace iBizProduct.Models.Templates
         /// <param name="OrderSpec"></param>
         public ProductOrderBase( ProductOrderSpec OrderSpec )
         {
-            this.Cost = (decimal)OrderSpec.Cost;
-            this.Setup = (decimal)OrderSpec.Setup;
+            this.Cost = ( decimal )OrderSpec.Cost;
+            this.Setup = ( decimal )OrderSpec.Setup;
             this.ProductOrderName = OrderSpec.ProductOrderName;
             this.ProductOrderStatus = OrderSpec.ProductOrderStatus;
             this.Notes = OrderSpec.Notes;
@@ -58,7 +58,7 @@ namespace iBizProduct.Models.Templates
         public ProductOrderStatus? ProductOrderStatus { get; set; }
 
         /// <summary>
-        /// Enter any notes related to your productorder
+        /// Enter any notes related to your ProductOrder
         /// </summary>
         public string Notes { get; set; }
     }

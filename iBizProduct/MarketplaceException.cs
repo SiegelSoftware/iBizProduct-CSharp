@@ -2,6 +2,7 @@
 
 namespace iBizProduct
 {
+    [Serializable]
     public class MarketplaceException : Exception
     {
         public MarketplaceException( string Message )

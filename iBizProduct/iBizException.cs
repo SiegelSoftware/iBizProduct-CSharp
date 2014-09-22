@@ -40,7 +40,8 @@ namespace iBizProduct
         /// <param name="LogType">EventLogEntryType</param>
         /// <param name="LogName">EventLogName</param>
         /// <param name="EventLogSource">EventLogSource</param>
-        public iBizException( string message, Exception inner, EventLogEntryType LogType = EventLogEntryType.Error, string LogName = "", string EventLogSource = "" ) : base( message, inner ) 
+        public iBizException( string message, Exception inner, EventLogEntryType LogType = EventLogEntryType.Error, string LogName = "", string EventLogSource = "" )
+            : base( message, inner )
         {
             this.EntryType = LogType;
 
@@ -81,7 +82,7 @@ namespace iBizProduct
             try
             {
                 //Checks if directory exists, if not attempts to create it
-                Directory.CreateDirectory(logFileDirectory);
+                Directory.CreateDirectory( logFileDirectory );
 
                 w = File.AppendText( logFile );
                 w.Write( "\r\nLog Entry : " );
@@ -107,6 +108,11 @@ namespace iBizProduct
                 message += LogException( ex, true );
 
             return message;
+        }
+
+        public override void GetObjectData( System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context )
+        {
+            base.GetObjectData( info, context );
         }
     }
 }

@@ -36,7 +36,8 @@ namespace iBizProduct
         {
             APIMethod = String.IsNullOrEmpty( APIMethodToUse ) ? DefaultAPIMethod : APIMethodToUse;
 
-            if( Params == null ) Params = new Dictionary<string, object>();
+            if( Params == null )
+                Params = new Dictionary<string, object>();
             var RequestEndpoint = EndpointFormatter( Endpoint, Action );
 
             switch( APIMethod )
@@ -90,11 +91,11 @@ namespace iBizProduct
         /// in the iBizAPI. 
         /// </summary>
         /// <param name="RequestEndpoint">The Formatted endpoint</param>
-        /// <param name="Params">Paramaters to be sent to the API</param>
+        /// <param name="Params">Parameters to be sent to the API</param>
         /// <returns>Result as JObject</returns>
         private async static Task<JObject> JSONCall( string RequestEndpoint, Dictionary<string, object> Params )
         {
-            string JsonSerializedParams = JsonConvert.SerializeObject( Params );
+            string JsonSerializedParams = JsonConvert.SerializeObject( Params, Formatting.Indented );
 
             try
             {
@@ -109,7 +110,14 @@ namespace iBizProduct
                     {
                         // ... Read the string.
                         string result = await content.ReadAsStringAsync().ConfigureAwait( false );
-                        return JsonConvert.DeserializeObject<JObject>( result );
+                        // Convert to JObject
+                        var jsonResult = JsonConvert.DeserializeObject<JObject>( result );
+
+                        // Return an iBizBackendException if we received an error from the backend.
+                        if( jsonResult[ "error" ] != null )
+                            throw new iBizBackendException( jsonResult[ "error" ].ToString(), RequestEndpoint, Params );
+                        else
+                            return jsonResult;
                     }
                 }
             }
@@ -167,7 +175,7 @@ namespace iBizProduct
             }
             catch( Exception ex )
             {
-                throw new iBizException( "An exception occured while determining the correct backend API to use. Please refer to the environmental documentation and confirm your environment is correctly configured.", ex );
+                throw new iBizException( "An exception occurred while determining the correct backend API to use. Please refer to the environmental documentation and confirm your environment is correctly configured.", ex );
             }
 
             // Return the default Production URI
@@ -178,8 +186,10 @@ namespace iBizProduct
         public static string GetDevApiHost()
         {
             string DevAPIHost = "";
-            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) ) DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIHost" );
-            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) ) DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIHost" ];
+            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) )
+                DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIHost" );
+            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) )
+                DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIHost" ];
 
             return DevAPIHost;
         }
@@ -187,8 +197,10 @@ namespace iBizProduct
         public static string GetDevApiPort()
         {
             string DevAPIPort = "";
-            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIPort" ) ) ) DevAPIPort = Environment.GetEnvironmentVariable( "DevAPIPort" );
-            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) ) DevAPIPort = ConfigurationManager.AppSettings[ "DevAPIPort" ];
+            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIPort" ) ) )
+                DevAPIPort = Environment.GetEnvironmentVariable( "DevAPIPort" );
+            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) )
+                DevAPIPort = ConfigurationManager.AppSettings[ "DevAPIPort" ];
 
             return DevAPIPort;
         }
@@ -196,10 +208,13 @@ namespace iBizProduct
         public static string GetDevApiProtocol()
         {
             string DevApiProtocol = "";
-            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevApiProtocol" ) ) ) DevApiProtocol = Environment.GetEnvironmentVariable( "DevApiProtocol" );
-            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevApiProtocol" ] ) ) DevApiProtocol = ConfigurationManager.AppSettings[ "DevApiProtocol" ];
+            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevApiProtocol" ) ) )
+                DevApiProtocol = Environment.GetEnvironmentVariable( "DevApiProtocol" );
+            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevApiProtocol" ] ) )
+                DevApiProtocol = ConfigurationManager.AppSettings[ "DevApiProtocol" ];
 
-            if( !String.IsNullOrEmpty( DevApiProtocol ) && Regex.IsMatch( DevApiProtocol, "^http?" ) ) throw new iBizException( "Invalid Protocol format. ApiProtocol must be either http:// or https://" );
+            if( !String.IsNullOrEmpty( DevApiProtocol ) && Regex.IsMatch( DevApiProtocol, "^http?" ) )
+                throw new iBizException( "Invalid Protocol format. ApiProtocol must be either http:// or https://" );
 
             return DevApiProtocol;
         }

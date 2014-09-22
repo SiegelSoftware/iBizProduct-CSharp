@@ -4,9 +4,7 @@
 using System;
 using System.Configuration;
 using System.IO;
-using System.Linq;
 using System.Text;
-using iBizProduct.Models.Templates;
 using iBizProduct.Security;
 using iBizProduct.Ultilities;
 using Newtonsoft.Json;
@@ -29,7 +27,7 @@ namespace iBizProduct
         /// <summary>
         /// Settings File location. Default is in the MyDocuments folder of the user executing the application.
         /// </summary>
-        public static string SettingsFile = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) + @"\ProductSettings.ibpv3";
+        public static string SettingsFile = string.Format( @"{0}\{1}", Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ), "ProductSettings.ibpv3" );
 
         /// <summary>
         /// This contains the settings that iBizProduct has to work with. 
@@ -106,6 +104,27 @@ namespace iBizProduct
         }
 
         /// <summary>
+        /// Decrypts a setting
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="Setting"></param>
+        /// <param name="EncryptionType"></param>
+        /// <returns>Decrypted Setting</returns>
+        public static T DecryptSetting<T>( T Setting, EncryptionType EncryptionType )
+        {
+            switch( EncryptionType )
+            {
+                case Security.EncryptionType.None:
+                    return Setting;
+                case Security.EncryptionType.Base64:
+                    var Decoded = Encoding.UTF8.GetString( Convert.FromBase64String( Setting as string ) );
+                    return ( T )Convert.ChangeType( Decoded, typeof( T ) );
+                default:
+                    throw new iBizException( "The Encryption Type selected is not currently supported." );
+            }
+        }
+
+        /// <summary>
         /// Get the application setting. This also allows you to specify a default value. This will check 
         /// The Settings Value from the settings file located in the MyDocuments directory of the user. If
         /// no value can be found it will check the Environment, and finally the Configuration AppSettings.
@@ -141,17 +160,8 @@ namespace iBizProduct
             }
 
             var setting = ( T )Convert.ChangeType( settingValue, typeof( T ) );
-            switch( EncryptionType )
-            {
-                case Security.EncryptionType.None:
-                    return setting;
-                case Security.EncryptionType.Base64:
-                    var Decoded = Encoding.UTF8.GetString( Convert.FromBase64String( setting as string ) );
-                    return ( T )Convert.ChangeType( Decoded, typeof( T ) );
-                default:
-                    throw new iBizException( "The Encryption Type selected is not currently supported." );
-            }
 
+            return DecryptSetting<T>( setting, EncryptionType );
         }
 
         /// <summary>

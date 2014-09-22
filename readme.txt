@@ -29,7 +29,16 @@ Update a requested Event: iBizAPIClient.UpdateEvent
 -----------------------------------------------------------------------------------------------------------------------------------
 Models
 The iBizProduct.Common library includes template Models for Products to use, and a complete Entity Framework Model for it's own
-database for Marketplace implementations.
+database for Marketplace implementations. All templates are abstract and require that the virtual relationships be defined when 
+implemented. Some templates also require that you pass in a generic type for the Primary key, which should be of Type int or Guid.
+Templates include:
+-EventBase
+-EventMessageBase
+-FAQBase
+-FAQMessageBase
+-MarketplaceProductOrderBase
+-ProductOrderBase
+-RuntimeConfigBase
 
 -----------------------------------------------------------------------------------------------------------------------------------
 Utilities

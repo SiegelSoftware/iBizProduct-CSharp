@@ -1,6 +1,7 @@
 ﻿// Copyright (c) iBizVision - 2014
 // Author: Dan Siegel
 
+using System;
 using System.Collections.Generic;
 
 namespace iBizProduct.Ultilities
@@ -8,9 +9,11 @@ namespace iBizProduct.Ultilities
     /// <summary>
     /// Abstracts out the EventLog Collection
     /// </summary>
-    public class EventLogCollection : Dictionary<string,string>
+    [Serializable]
+    public class EventLogCollection : Dictionary<string, string>
     {
-        public EventLogCollection() : base()
+        public EventLogCollection()
+            : base()
         {
             this.Add( "iBizProduct", "Operational" );
         }

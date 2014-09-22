@@ -87,7 +87,7 @@
     <Compile Include="DataContracts\ProductAuthentication.cs" />
     <Compile Include="Http\APIClient.cs" />
     <Compile Include="iBizAPIClient.cs" />
-    <Compile Include="iBizAPIException.cs" />
+    <Compile Include="iBizBackendException.cs" />
     <Compile Include="iBizBE.cs" />
     <Compile Include="iBizException.cs" />
     <Compile Include="DataContracts\InfoToReturn.cs" />
@@ -107,9 +107,8 @@
     <Compile Include="Models\Templates\FAQBase.cs" />
     <Compile Include="Models\Templates\FAQMessageBase.cs" />
     <Compile Include="Models\Templates\MarketplaceProductOrderBase.cs" />
-    <Compile Include="Models\Templates\PageBase.cs" />
     <Compile Include="Models\Templates\ProductOrderBase.cs" />
-    <Compile Include="Models\Templates\RevisionBase.cs" />
+    <Compile Include="Models\Templates\RuntimeConfigBase.cs" />
     <Compile Include="NullSettingValueException.cs" />
     <Compile Include="ProductSettings.cs" />
     <Compile Include="ProductSettingValue.cs" />

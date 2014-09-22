@@ -56,7 +56,7 @@ namespace iBizProduct
                     Product = productContext.Products.FirstOrDefault( p => p.ProductId == value );
                 }
                 else
-                    throw new iBizException( "The ProductId may only be set for Marketplace Applications." );
+                    throw new MarketplaceException( "The ProductId may only be set for Marketplace Applications." );
             }
         }
 
@@ -78,7 +78,7 @@ namespace iBizProduct
                     }
                     else
                     {
-                        throw new MarketplaceException( "ExternalKey", ProductId );
+                        throw new NullSettingValueException( "ExternalKey", ProductId );
                     }
                 }
                 else
@@ -91,38 +91,12 @@ namespace iBizProduct
         /// <summary>
         /// Product Event Log Name
         /// </summary>
-        public static string EventLogName
-        {
-            get
-            {
-                if( IsMarketplaceApp )
-                {
-                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
-                }
-                else
-                {
-                    return GetSetting<string>( "EventLogName", "iBizProduct" );
-                }
-            }
-        }
+        public static string EventLogName { get { return GetSetting<string>( "EventLogName", "iBizProduct" ); } }
 
         /// <summary>
         /// Event Log Source
         /// </summary>
-        public static string EventLogSource
-        {
-            get
-            {
-                if( IsMarketplaceApp )
-                {
-                    throw new NotImplementedException( "Marketplace Support has not yet been fully implemented." );
-                }
-                else
-                {
-                    return GetSetting<string>( "EventLogSource", "iBizProduct" );
-                }
-            }
-        }
+        public static string EventLogSource { get { return GetSetting<string>( "EventLogSource", "iBizProduct" ); } }
 
         /// <summary>
         /// Event Log
@@ -131,7 +105,7 @@ namespace iBizProduct
         {
             get
             {
-                if( EventLog.SourceExists( EventLogSource ) )
+                if( !EventLog.SourceExists( EventLogSource ) )
                 {
                     try
                     {
