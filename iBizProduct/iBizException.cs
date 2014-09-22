@@ -66,14 +66,14 @@ namespace iBizProduct
 
         private void LogError( string message = defaultMessage )
         {
-            var eventId = iBizEventLog.Entries.Count + 1;
+            string ErrorMessage = string.Format( "Exception thrown: {0}\r\n\r\nMessage: {1}\r\nStack Trace:\r\n{2}\r\n{3}", this.GetType(), this.Message, this.StackTrace, LogException( this.InnerException ) );
 
-            string ErrorMessage = "Exception thrown: " + this.GetType() + "\r\n\r\n" +
-                "Message: " + this.Message + "\r\n" +
-                "Stack Trace:\r\n" + this.StackTrace + "\r\n" + LogException( this.InnerException );
+            if( iBizEventLog != null )
+            {
+                var eventId = iBizEventLog.Entries.Count + 1;
 
-            if( iBizEventLog == null )
                 iBizEventLog.WriteEntry( ErrorMessage, EventLogEntryType.Error, eventId );
+            }
 
             // The following is considered depricated and will be removed in the near future. 
             Console.WriteLine( message );
@@ -99,6 +99,9 @@ namespace iBizProduct
 
         private static string LogException( Exception ex, bool InnerException = false )
         {
+            if( ex == null )
+                return "";
+
             string message = string.Format( "  :Exception Thrown: {0}\r\n  :Message: {1}\r\n  :Stack Trace: {2}\r\n", ex.GetType(), ex.Message, ex.StackTrace );
 
             if( InnerException )

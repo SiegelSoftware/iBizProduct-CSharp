@@ -105,7 +105,11 @@ namespace iBizProduct
         {
             get
             {
-                if( !EventLog.SourceExists( EventLogSource ) )
+                if( !IsElevated )
+                {
+                    return null;
+                }
+                else if( !EventLog.SourceExists( EventLogSource ) )
                 {
                     try
                     {

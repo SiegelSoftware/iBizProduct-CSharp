@@ -4,6 +4,7 @@
 using System;
 using System.Configuration;
 using System.IO;
+using System.Security.Principal;
 using System.Text;
 using iBizProduct.Security;
 using iBizProduct.Ultilities;
@@ -39,6 +40,16 @@ namespace iBizProduct
         static SettingsBase()
         {
             ReadSettings();
+        }
+
+        public static bool IsElevated
+        {
+            get
+            {
+                var identity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal( identity );
+                return principal.IsInRole( WindowsBuiltInRole.Administrator );
+            }
         }
 
         /// <summary>
@@ -181,13 +192,9 @@ namespace iBizProduct
             {
                 return GetSetting<T>( SettingName, EncryptionType );
             }
-            catch( NullSettingValueException )
+            catch( Exception )
             {
                 return Default;
-            }
-            catch( Exception ex )
-            {
-                throw new NullSettingValueException( string.Format( "Unable to get the value for {0}", SettingName ), ex );
             }
         }
 
