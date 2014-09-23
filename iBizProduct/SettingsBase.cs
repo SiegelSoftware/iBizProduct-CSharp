@@ -39,6 +39,7 @@ namespace iBizProduct
 
         static SettingsBase()
         {
+            Settings = new ProductSettings();
             ReadSettings();
         }
 
@@ -147,10 +148,14 @@ namespace iBizProduct
         /// <exception cref="iBizException">Throws an iBizException due to a NullReference Exception if no value can be found.</exception>
         public static T GetSetting<T>( string SettingName, EncryptionType EncryptionType = EncryptionType.None )
         {
-            var settingObject = Settings[ SettingName ];
-            string settingValue = settingObject.Value;
-
-            if( String.IsNullOrEmpty( settingValue ) )
+            string settingValue;
+            try
+            {
+                var settingObject = Settings[ SettingName ];
+                settingValue = settingObject.Value;
+                EncryptionType = settingObject.Encryption;
+            }
+            catch( Exception )
             {
                 settingValue = Environment.GetEnvironmentVariable( SettingName );
 
@@ -164,10 +169,6 @@ namespace iBizProduct
                         throw new NullSettingValueException( SettingName, NullException );
                     }
                 }
-            }
-            else
-            {
-                EncryptionType = settingObject.Encryption;
             }
 
             var setting = ( T )Convert.ChangeType( settingValue, typeof( T ) );

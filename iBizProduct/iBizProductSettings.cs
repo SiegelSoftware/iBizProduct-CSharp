@@ -29,6 +29,12 @@ namespace iBizProduct
             }
         }
 
+        static iBizProductSettings()
+        {
+            Settings = new ProductSettings();
+            ReadSettings();
+        }
+
         /// <summary>
         /// The Product Id from the settings that iBizProduct has to work with. For standalone
         /// products this setting must be located within the standard Environmental Configurations.
@@ -172,7 +178,21 @@ namespace iBizProduct
         /// <summary>
         /// Is this a Marketplace Application. NOTE: There is currently no support for Marketplace Applications.
         /// </summary>
-        public static bool IsMarketplaceApp { get { return Settings[ "Marketplace" ].Value == "true" ? true : false; } }
+        public static bool IsMarketplaceApp 
+        { 
+            get 
+            {
+                try
+                {
+                    var setting = Settings.FirstOrDefault( s => s.Key == "Marketplace" ).Value;
+                    return bool.Parse( setting.Value );
+                }
+                catch( Exception )
+                {
+                    return false;
+                }
+            } 
+        }
 
         internal static string ConfigKey { get { return GetSetting<string>( "ConfigKey" ); } }
 

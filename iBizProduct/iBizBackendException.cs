@@ -35,28 +35,35 @@ namespace iBizProduct
         private static string GetBackendMessage( string Message )
         {
             var matches = Regex.Split( Message, Pattern );
-            return matches[ 2 ];
+            return Message;
         }
 
         private void HandleBackendErrorString( string Message )
         {
-            var matches = Regex.Split( Message, Pattern );
-            this.BackendErrorId = Convert.ToInt32( matches[ 1 ] );
-            this.ErrorData = matches[ 3 ];
+            try
+            {
+                var matches = Regex.Split( Message, Pattern );
+                this.BackendErrorId = Convert.ToInt32( matches[ 1 ] );
+                this.ErrorData = matches[ 3 ];
 #if DEBUG
-            this.ErrorPath = matches[4];
+                this.ErrorPath = matches[4];
 #else
-            this.ErrorPath = "";
+                this.ErrorPath = "";
 #endif
-            //var temp = "Error processing request: 10003: The object for the passed ID does not exist. [ERROR_DATA: ProductOrderEvent, 1359374, (0)] [ERROR_PATH:  (/opt/ibizd/lib/Functions.pm,402) (/opt/ibizd/lib/CommerceManager/ProductManager.pm,2502) (/opt/ibizd/lib/CommerceManager/ProductManager/ProductOrder/Event.pm,119)]\n";
+                //var temp = "Error processing request: 10003: The object for the passed ID does not exist. [ERROR_DATA: ProductOrderEvent, 1359374, (0)] [ERROR_PATH:  (/opt/ibizd/lib/Functions.pm,402) (/opt/ibizd/lib/CommerceManager/ProductManager.pm,2502) (/opt/ibizd/lib/CommerceManager/ProductManager/ProductOrder/Event.pm,119)]\n";
 
-            //$pattern = '/Error processing (?:request|response): (\d+): ([^\[]+)\s*(?:\[ERROR_DATA: ([^\]]+)\])?\s*\[ERROR_PATH: ([^\]]+)\]/';
-            //preg_match($pattern, trim($message), $matches);
-            //if ($matches)
-            //{
-            //    $this->error_code = $matches[1];
-            //    return trim($matches[2]) .' '. trim($matches[3] ? " ({$matches[3]})": '');
-            //}
+                //$pattern = '/Error processing (?:request|response): (\d+): ([^\[]+)\s*(?:\[ERROR_DATA: ([^\]]+)\])?\s*\[ERROR_PATH: ([^\]]+)\]/';
+                //preg_match($pattern, trim($message), $matches);
+                //if ($matches)
+                //{
+                //    $this->error_code = $matches[1];
+                //    return trim($matches[2]) .' '. trim($matches[3] ? " ({$matches[3]})": '');
+                //}
+            }
+            catch( Exception )
+            {
+                // Don't worry... be happy...
+            }
         }
     }
 }

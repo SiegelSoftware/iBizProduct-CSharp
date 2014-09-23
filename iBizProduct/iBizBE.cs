@@ -97,33 +97,26 @@ namespace iBizProduct
         {
             string JsonSerializedParams = JsonConvert.SerializeObject( Params, Formatting.Indented );
 
-            try
+            using( var client = new APIClient() )
             {
-                using( var client = new APIClient() )
+                client.BaseAddress = GetAPIUri();
+                client.DefaultRequestHeaders.Accept.Clear();
+                //client.DefaultRequestHeaders.Accept.Add( new MediaTypeWithQualityHeaderValue( "application/json" ) );
+
+                using( HttpResponseMessage response = await client.PostAsync( RequestEndpoint, new StringContent( JsonSerializedParams, Encoding.UTF8, "application/json" ) ).ConfigureAwait( false ) )
+                using( HttpContent content = response.Content )
                 {
-                    client.BaseAddress = GetAPIUri();
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    //client.DefaultRequestHeaders.Accept.Add( new MediaTypeWithQualityHeaderValue( "application/json" ) );
+                    // ... Read the string.
+                    string result = await content.ReadAsStringAsync().ConfigureAwait( false );
+                    // Convert to JObject
+                    var jsonResult = JsonConvert.DeserializeObject<JObject>( result );
 
-                    using( HttpResponseMessage response = await client.PostAsync( RequestEndpoint, new StringContent( JsonSerializedParams, Encoding.UTF8, "application/json" ) ).ConfigureAwait( false ) )
-                    using( HttpContent content = response.Content )
-                    {
-                        // ... Read the string.
-                        string result = await content.ReadAsStringAsync().ConfigureAwait( false );
-                        // Convert to JObject
-                        var jsonResult = JsonConvert.DeserializeObject<JObject>( result );
-
-                        // Return an iBizBackendException if we received an error from the backend.
-                        if( jsonResult[ "error" ] != null )
-                            throw new iBizBackendException( jsonResult[ "error" ].ToString(), RequestEndpoint, Params );
-                        else
-                            return jsonResult;
-                    }
+                    // Return an iBizBackendException if we received an error from the backend.
+                    if( jsonResult[ "error" ] != null )
+                        throw new iBizBackendException( jsonResult[ "error" ].ToString(), RequestEndpoint, Params );
+                    else
+                        return jsonResult;
                 }
-            }
-            catch( Exception ex )
-            {
-                return new JObject() { { "error", ex.Message } };
             }
         }
 

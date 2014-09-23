@@ -18,12 +18,7 @@ namespace iBizProduct
     /// </summary>
     public class iBizAPIClient
     {
-        private static string ApiKey = iBizProductSettings.ExternalKey;
-
-        static iBizAPIClient()
-        {
-            VerifyExternalKey();
-        }
+        private static string ApiKey { get; set; }
 
         #region CommerceManager/ProductManager/ProductOrder
 
@@ -41,18 +36,15 @@ namespace iBizProduct
                 ProductId = iBizProductSettings.ProductId;
             }
 
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "product_id", ProductId },
                 { "productorder_spec", ProductOrderSpec.OrderSpec() }
             };
 
-            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalAdd", Params ).Result;
-
-            if( result[ "error" ] != null )
-                throw new iBizException( result[ "error" ].ToString() );
-
-            return int.Parse( result[ "productorder_id" ].ToString() );
+            return GetResult<int>( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalAdd", Params, "productorder_id" );
         }
 
         /// <summary>
@@ -63,18 +55,15 @@ namespace iBizProduct
         /// <returns>A boolean indicating whether or not the edit was successful.</returns>
         public static bool ProductOrderEdit( int ProductOrderId, ProductOrderSpec productOrderSpec )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
                 { "productorder_spec", productOrderSpec.OrderSpec() }
             };
 
-            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params ).Result;
-
-            if( result[ "error" ] != null )
-                throw new iBizException( result[ "error" ].ToString() );
-
-            return true;
+            return GetResult<bool>( "JSON/CommerceManager/ProductManager/ProductOrder", "ExternalEdit", Params, "success" );
         }
 
         /// <summary>
@@ -85,6 +74,8 @@ namespace iBizProduct
         /// <returns>Dictionary&lt;string, object&gt; with the requested View Object</returns>
         public static JObject ProductOrderView( int ProductOrderId, ProductOrderInfoToReturn InfoToReturn = null )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
@@ -93,28 +84,28 @@ namespace iBizProduct
             if( InfoToReturn != null )
                 Params.Add( "info_to_return", InfoToReturn );
 
-            var view = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalView", Params ).Result;
-
-            if( view[ "error" ] != null )
-                throw new iBizException( view[ "error" ].ToString() );
-
-            return view;
+            return GetResult( "CommerceManager/ProductManager/ProductOrder", "ExternalView", Params );
         }
 
         /// <summary>
         /// This will instruct the Panel to make a one time charge to a client. This could be due to a customer modifying the terms of 
         /// their services with your product or an On Demand payment.
         /// </summary>
-        /// <param name="CycleBeginDate"></param>
-        /// <param name="CycleEndDate"></param>
-        /// <param name="OneTimeCost"></param>
-        /// <param name="ProductOrderId"></param>
-        /// <param name="DetailAddon"></param>
-        /// <param name="DescriptionAddOn"></param>
-        /// <param name="DueNow"></param>
+        /// <param name="CycleBeginDate">The beginning date this charge is being added for</param>
+        /// <param name="CycleEndDate">The ending date this charge is being added for</param>
+        /// <param name="OneTimeCost">The one time cost for this additional charge.</param>
+        /// <param name="ProductOrderId">The ID of the productorder to bill for.</param>
+        /// <param name="DetailAddon">The snippit you want added to the beginning of the detail.</param>
+        /// <param name="DescriptionAddOn">The snippit you want added to the beginning of the description.</param>
+        /// <param name="DueNow">An boolean flag to indicate that the one time charge must be due now (false: Not due now, true: Due now but will be pushed if not possible).</param>
         /// <returns>BillResponse Enum Value</returns>
+        /// <remarks>
+        /// DueNow is actually an int on the backend and accepts 0 for not due now, 1 for due now but may be pushed, & 2 for force due now
+        /// </remarks>
         public static BillResponse ProductOrderBillOrderAddOneTime( DateTime CycleBeginDate, DateTime CycleEndDate, decimal OneTimeCost, int ProductOrderId, string DetailAddon = null, string DescriptionAddOn = null, bool DueNow = true )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
@@ -129,14 +120,7 @@ namespace iBizProduct
                 Params.Add( "description_addon", DescriptionAddOn );
             Params.Add( "due_now", ( ( DueNow == true ) ? 1 : 0 ).ToString() );
 
-            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params ).Result;
-
-            if( result[ "error" ] != null )
-                throw new iBizException( result[ "error" ].ToString() );
-
-            var ResponseCode = int.Parse( result[ "response_code" ].ToString() );
-
-            return ( BillResponse )ResponseCode;
+            return GetResult<BillResponse>( "CommerceManager/ProductManager/ProductOrder", "ExternalBillOrderAddOneTime", Params, "response_code" );
         }
 
         /// <summary>
@@ -146,24 +130,19 @@ namespace iBizProduct
         /// <returns>DateTime of the next charge</returns>
         public static DateTime GetNextChargeDate( int ProductOrderId )
         {
+            VerifyExternalKey();
+
             var Params = new Dictionary<string, object>() 
             {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId }
             };
 
-            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalGetNextChargeDate", Params ).Result;
-
-            if( result[ "error" ] != null )
-                throw new iBizException( result[ "error" ].ToString() );
+            var result = GetResult<int>( "CommerceManager/ProductManager/ProductOrder", "ExternalGetNextChargeDate", Params, "next_charge_date" );
 
             var ChargeDate = new DateTime();
 
-            int NextChargeDate;
-            if( !int.TryParse( result[ "next_charge_date" ].ToString(), out NextChargeDate ) )
-                throw new iBizException( "Unable to Parse Next Charge Date" );
-
-            return ChargeDate.ConvertFromUnixTime( NextChargeDate );
+            return ChargeDate.ConvertFromUnixTime( result );
         }
 
         /// <summary>
@@ -173,18 +152,15 @@ namespace iBizProduct
         /// <returns>The language of the owner.</returns>
         public static Language GetOwnerLanguage( int ProductOrderId )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() 
             {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId }
             };
 
-            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalGetOwnerLanguage", Params ).Result;
-
-            if( result[ "error" ] != null )
-                throw new iBizException( result[ "error" ].ToString() );
-
-            return ( Language )Enum.Parse( typeof( Language ), result[ "language " ].ToString() );
+            return GetResult<Language>( "CommerceManager/ProductManager/ProductOrder", "ExternalGetOwnerLanguage", Params );
         }
 
         /// <summary>
@@ -194,16 +170,15 @@ namespace iBizProduct
         /// <returns>Product Details and Offer Chain</returns>
         public static OrderPricing ProductOrderPricing( int ProductOrderId )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() 
             {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId }
             };
 
-            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalProductOrderPricing", Params ).Result;
-
-            if( result[ "error" ] != null )
-                throw new iBizException( result[ "error" ].ToString() );
+            var result = GetResult( "CommerceManager/ProductManager/ProductOrder", "ExternalProductOrderPricing", Params );
 
             return new OrderPricing( result );
         }
@@ -216,6 +191,8 @@ namespace iBizProduct
         /// <returns>The id of the case added</returns>
         public static int ProductOpenCaseWithOwner( int ProductOrderId, CaseSpec CaseSpec )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() 
             {
                 { "external_key", ApiKey },
@@ -223,11 +200,7 @@ namespace iBizProduct
                 { "case_spec", CaseSpec.GetSpec() }
             };
 
-            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalOpenCaseWithOwner", Params ).Result;
-
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
-
-            return int.Parse( result[ "new_id" ].ToString() );
+            return GetResult<int>( "CommerceManager/ProductManager/ProductOrder", "ExternalOpenCaseWithOwner", Params, "new_id" );
         }
 
         /// <summary>
@@ -240,6 +213,8 @@ namespace iBizProduct
         /// <returns>The affected rows</returns>
         public static int ProductUpdateCaseWithOwner( int ProductOrderId, int CaseId, CaseSpec CaseSpec )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() 
             {
                 { "external_key", ApiKey },
@@ -248,11 +223,7 @@ namespace iBizProduct
                 { "case_spec", CaseSpec.GetSpec() }
             };
 
-            var result = iBizBE.APICall( "CommerceManager/ProductManager/ProductOrder", "ExternalUpdateCaseWithOwner", Params ).Result;
-
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
-
-            return int.Parse( result[ "effected_rows " ].ToString() );
+            return GetResult<int>( "CommerceManager/ProductManager/ProductOrder", "ExternalUpdateCaseWithOwner", Params, "effected_rows" );
         }
 
         #endregion
@@ -273,6 +244,8 @@ namespace iBizProduct
         /// <returns>Indicates whether or not the update was successful</returns>
         public static bool UpdateEvent( int EventId, EventStatus Status, string Message = null )
         {
+            VerifyExternalKey();
+
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", iBizProductSettings.ExternalKey },
                 { "productorderevent_id", EventId },
@@ -281,11 +254,7 @@ namespace iBizProduct
 
             if( !String.IsNullOrEmpty( Message ) ) Params.Add( "message", Message );
 
-            var result = iBizBE.APICall( "JSON/CommerceManager/ProductManager/ProductOrder/Event", "ExternalUpdateEvent", Params ).Result;
-
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
-
-            return int.Parse( result[ "success" ].ToString() ) == 1 ? true : false;
+            return GetResult<int>( "JSON/CommerceManager/ProductManager/ProductOrder/Event", "ExternalUpdateEvent", Params, "success" ) == 1 ? true : false;
         }
 
         #endregion
@@ -294,6 +263,8 @@ namespace iBizProduct
 
         public static OfferPrice GetPriceByOffer( int OfferId, bool Markup = false, int AccountId = 0 )
         {
+            VerifyExternalKey();
+
             // Need Backend to accept Markup Flag
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", iBizProductSettings.ExternalKey },
@@ -302,11 +273,7 @@ namespace iBizProduct
 
             if( AccountId > 0 ) Params.Add( "account_id", AccountId );
 
-            var result = iBizBE.APICall( "JSON/CommerceManager/ProductOffer", "ExternalProductOfferPrice", Params ).Result;
-
-            if( result[ "error" ] != null ) throw new iBizException( result[ "error" ].ToString() );
-
-            return new OfferPrice( result );
+            return new OfferPrice( GetResult( "JSON/CommerceManager/ProductOffer", "ExternalProductOfferPrice", Params ) );
         }
 
         #endregion
@@ -362,7 +329,17 @@ namespace iBizProduct
         /// <returns>True if a value exists for the External Key</returns>
         public static bool ExternalKeyExists()
         {
-            return !String.IsNullOrEmpty( iBizProductSettings.ExternalKey );
+            try
+            {
+                if( ApiKey == null )
+                    ApiKey = iBizProductSettings.ExternalKey;
+
+                return !String.IsNullOrEmpty( iBizProductSettings.ExternalKey );
+            }
+            catch( Exception )
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -375,6 +352,39 @@ namespace iBizProduct
                 throw new iBizException( "Your Products External Key was not found or is not accessible. Please verify that the key is set in the AppSettings " +
                                             "section of your config file. You can find the Product External Key in the Panel under the External Attributes section " +
                                             "of the ProductEdit page.", new SettingsPropertyNotFoundException( "The setting you are looking for is not available or does not exist within the current scope of the application. Please refer to the setup documentation for required systems configurations." ) );
+        }
+
+        private static T GetResult<T>( string Object, string Action, Dictionary<string, object> Params, string Key )
+        {
+            var result = GetResult( Object, Action, Params );
+            return ( T )Convert.ChangeType( result[ Key ], typeof( T ) );
+        }
+
+        private static T GetResult<T>( string Object, string Action, Dictionary<string, object> Params )
+        {
+            return ( T )Convert.ChangeType( GetResult( Object, Action, Params ), typeof( T ) );
+        }
+
+        private static JObject GetResult( string Object, string Action, Dictionary<string, object> Params )
+        {
+            try
+            {
+                var result = iBizBE.APICall( Object, Action, Params ).Result;
+
+                if( result[ "error" ] != null )
+                    throw new iBizException( result[ "error" ].ToString() );
+
+                return result;
+            }
+            catch( AggregateException ex )
+            {
+                // This should be an iBizBackendException but could be any other exception thrown by accident from iBizBE
+                throw ex.InnerException;
+            }
+            catch( Exception ex )
+            {
+                throw ex;
+            }
         }
         #endregion
     }
