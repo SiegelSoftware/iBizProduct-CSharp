@@ -12,9 +12,15 @@ namespace iBizProduct.Security
         Base64,
 
         /// <summary>
-        /// Use SHA Encryption.
+        /// Use Laravel compatible encryption. This is based off of the 4.2 library at
+        /// https://github.com/laravel/framework/blob/4.2/src/Illuminate/Encryption/Encrypter.php
         /// </summary>
-        SHA,
+        Laravel,
+
+        /// <summary>
+        /// Use Rijndael 128 Bit Encryption
+        /// </summary>
+        Rijndael128,
 
         /// <summary>
         /// No Encryption Used.

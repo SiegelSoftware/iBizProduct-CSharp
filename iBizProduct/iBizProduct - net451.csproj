@@ -112,9 +112,14 @@
     <Compile Include="NullSettingValueException.cs" />
     <Compile Include="ProductSettings.cs" />
     <Compile Include="ProductSettingValue.cs" />
+    <Compile Include="Security\Base64Encrypter.cs" />
     <Compile Include="Security\EncryptionType.cs" />
+    <Compile Include="Security\HashType.cs" />
     <Compile Include="Security\iBizSecure.cs" />
     <Compile Include="Security\iBizSqlMembershipProvider.cs" />
+    <Compile Include="Security\IEncryptionInterface.cs" />
+    <Compile Include="Security\LaravelEncrypter.cs" />
+    <Compile Include="Security\PHPSerializer.cs" />
     <Compile Include="SettingsBase.cs" />
     <Compile Include="Ultilities\DateTimeExtensions.cs" />
     <Compile Include="Ultilities\EventLogCollection.cs" />
