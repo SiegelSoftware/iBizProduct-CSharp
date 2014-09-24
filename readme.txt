@@ -48,3 +48,4 @@ UnixTime: Provides a framework for working with UnixTimes
 ProductOrderUtility: Provides an ability to determine what the appropriate status should be for a particular order.
 EventLogCollection: Provides a framework for create a list of Event Logs which can be created in the Event Logger
 EventLogger: Encapsulates the EventLog class to provide an easier to use interface for creating custom logging experiences.
+iBizSecure: Provides common interface for encrypting, decrypting, and hasing using commonly supported Encryption/Hashing types.

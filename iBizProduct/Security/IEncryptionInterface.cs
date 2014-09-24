@@ -1,4 +1,6 @@
-﻿
+﻿// Copyright (c) iBizVision - 2014
+// Author: William Cahill-Manley
+
 namespace iBizProduct.Security
 {
     public interface IEncryptionInterface

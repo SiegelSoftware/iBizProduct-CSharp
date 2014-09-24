@@ -1,5 +1,5 @@
 ﻿// Copyright (c) iBizVision - 2014
-// Author: Dan Siegel
+// Author: William Cahill-Manley
 
 using System;
 using System.Configuration;
@@ -54,16 +54,21 @@ namespace iBizProduct.Security
             }
         }
 
-        public string Decrypt( string encryptedValue, EncryptionType EncryptionType )
+        public T Decrypt<T>( string encryptedValue, EncryptionType EncryptionType )
         {
-            switch(EncryptionType)
+            switch( EncryptionType )
             {
                 case EncryptionType.None:
-                    return encryptedValue;
+                    return ( T )Convert.ChangeType( encryptedValue, typeof( T ) );
                 default:
                     IEncryptionInterface Decryptor = this.ConstructEncrypter( EncryptionType );
-                    return Decryptor.Decrypt<string>( encryptedValue );
+                    return Decryptor.Decrypt<T>( encryptedValue );
             }
+        }
+
+        public string Decrypt( string encryptedValue, EncryptionType EncryptionType )
+        {
+            return Decrypt<string>( encryptedValue, EncryptionType );
         }
 
         public string Hash ( string textValue, HashType HashType )

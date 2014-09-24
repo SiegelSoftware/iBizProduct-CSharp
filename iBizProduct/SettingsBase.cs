@@ -153,6 +153,9 @@ namespace iBizProduct
             {
                 var settingObject = Settings[ SettingName ];
                 settingValue = settingObject.Value;
+                if( String.IsNullOrEmpty( settingValue ) )
+                    throw new Exception();
+
                 EncryptionType = settingObject.Encryption;
             }
             catch( Exception )
@@ -171,9 +174,8 @@ namespace iBizProduct
                 }
             }
 
-            var setting = ( T )Convert.ChangeType( settingValue, typeof( T ) );
-
-            return DecryptSetting<T>( setting, EncryptionType );
+            iBizSecure Encryptor = new iBizSecure();
+            return Encryptor.Decrypt<T>( settingValue, EncryptionType );
         }
 
         /// <summary>

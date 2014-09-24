@@ -7,18 +7,18 @@ namespace iBizProduct.Security
     public enum HashType
     {
         /// <summary>
+        /// No Encryption Used.
+        /// </summary>
+        None = 0,
+
+        /// <summary>
         /// Use SHA Encryption with 256 Bits.
         /// </summary>
-        SHA256,
+        SHA256 = 1,
 
         /// <summary>
         /// Use SHA Encryption with 512 Bits.
         /// </summary>
-        SHA512,
-
-        /// <summary>
-        /// No Encryption Used.
-        /// </summary>
-        None
+        SHA512 = 2,
     }
 }

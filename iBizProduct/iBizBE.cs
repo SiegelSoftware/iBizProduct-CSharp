@@ -152,18 +152,22 @@ namespace iBizProduct
                 if( IsDev || IsLocal || ( RequestHost != "" && Regex.IsMatch( RequestHost, @"/?:^dev|\.ibizdevelopers\.com$" ) ) )
                 {
                     // Check to see if the DevAPIHost is defined in Environment/AppSettings, otherwise use a default host.
-                    string DevAPIHost = GetDevApiHost();
+                    string DevAPIHost = SettingsBase.GetSetting<string>( "DevAPIHost", "" );
 
                     // Check to see if the DevAPIPort is defined in Environment/AppSettings, otherwise use a default port.
-                    string DevAPIPort = GetDevApiPort();
+                    int DevAPIPort = SettingsBase.GetSetting<int>( "DevAPIPort", -1 );
 
-                    string DevProtocol = GetDevApiProtocol();
+                    string DevProtocol = SettingsBase.GetSetting<string>( "DevApiProtocol", "" );
 
                     // Return a Dev/Stage URI
-                    if( String.IsNullOrEmpty( DevAPIHost ) || String.IsNullOrEmpty( DevProtocol ) )
+                    if( String.IsNullOrEmpty( DevAPIHost ) || String.IsNullOrEmpty( DevProtocol ) || !Regex.IsMatch( DevProtocol, "^http" ) )
                         return new Uri( StagingAPI );
 
-                    DevUri = Regex.IsMatch( DevProtocol, "^http" ) ? ( DevProtocol + DevAPIHost ) : ( DevProtocol + DevAPIHost + ":" + DevAPIPort );
+                    bool appendPort = false;
+                    if( DevAPIPort > 0 && ( !( Regex.IsMatch( DevProtocol, "^https" ) && DevAPIPort == 443 ) || DevAPIPort != 80 ) )
+                        appendPort = true;
+
+                    DevUri = appendPort ? ( DevProtocol + DevAPIHost + ":" + DevAPIPort ) : ( DevProtocol + DevAPIHost );
 
                     return new Uri( DevUri );
                 }
@@ -176,42 +180,6 @@ namespace iBizProduct
             // Return the default Production URI
             return new Uri( ProductionAPI );
 
-        }
-
-        public static string GetDevApiHost()
-        {
-            string DevAPIHost = "";
-            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIHost" ) ) )
-                DevAPIHost = Environment.GetEnvironmentVariable( "DevAPIHost" );
-            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIHost" ] ) )
-                DevAPIHost = ConfigurationManager.AppSettings[ "DevAPIHost" ];
-
-            return DevAPIHost;
-        }
-
-        public static string GetDevApiPort()
-        {
-            string DevAPIPort = "";
-            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevAPIPort" ) ) )
-                DevAPIPort = Environment.GetEnvironmentVariable( "DevAPIPort" );
-            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevAPIPort" ] ) )
-                DevAPIPort = ConfigurationManager.AppSettings[ "DevAPIPort" ];
-
-            return DevAPIPort;
-        }
-
-        public static string GetDevApiProtocol()
-        {
-            string DevApiProtocol = "";
-            if( !String.IsNullOrEmpty( Environment.GetEnvironmentVariable( "DevApiProtocol" ) ) )
-                DevApiProtocol = Environment.GetEnvironmentVariable( "DevApiProtocol" );
-            if( !String.IsNullOrEmpty( ConfigurationManager.AppSettings[ "DevApiProtocol" ] ) )
-                DevApiProtocol = ConfigurationManager.AppSettings[ "DevApiProtocol" ];
-
-            if( !String.IsNullOrEmpty( DevApiProtocol ) && Regex.IsMatch( DevApiProtocol, "^http?" ) )
-                throw new iBizException( "Invalid Protocol format. ApiProtocol must be either http:// or https://" );
-
-            return DevApiProtocol;
         }
     }
 }

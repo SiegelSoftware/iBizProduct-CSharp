@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) iBizVision - 2014
+// Author: William Cahill-Manley
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;

@@ -20,6 +20,11 @@ namespace iBizProduct
     {
         private static string ApiKey { get; set; }
 
+        static iBizAPIClient()
+        {
+
+        }
+
         #region CommerceManager/ProductManager/ProductOrder
 
         /// <summary>

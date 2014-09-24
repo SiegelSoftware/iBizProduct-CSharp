@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿// Copyright (c) iBizVision - 2014
+// Author: William Cahill-Manley
+
+using System;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace iBizProduct.Security
 {
