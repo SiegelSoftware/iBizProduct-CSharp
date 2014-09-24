@@ -171,6 +171,8 @@ namespace iBizProduct
                         return new Uri( StagingAPI );
 
                     DevUri = Regex.IsMatch( DevProtocol, "^http" ) ? ( DevProtocol + DevAPIHost ) : ( DevProtocol + DevAPIHost + ":" + DevAPIPort );
+
+                    return new Uri( DevUri );
                 }
             }
             catch( Exception ex )
