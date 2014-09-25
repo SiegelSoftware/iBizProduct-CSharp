@@ -76,8 +76,9 @@ namespace iBizProduct.Security
             switch(HashType)
             {
                 case HashType.None:
-                default:
                     return textValue;
+                default:
+                    return this.ConstructHasher( HashType ).Hash( textValue );
             }
         }
 
@@ -96,7 +97,21 @@ namespace iBizProduct.Security
                     throw new iBizException( String.Format( "EncryptionType '{0}' is not yet implemented.", Encryptor.ToString() ) );
             }
 
+        }
 
+        private IHasherInterface ConstructHasher( HashType Hasher )
+        {
+            switch( Hasher )
+            {
+                case HashType.SHA256:
+                    return new GenericHasher( SHA256Managed.Create() );
+                case HashType.SHA512:
+                    return new GenericHasher( SHA512Managed.Create() );
+                case HashType.None:
+                    throw new iBizException( "Can not construct Hasher of type None" );
+                default:
+                    throw new iBizException( String.Format( "HashType '{0}' is not yet implemented.", Hasher.ToString() ) );
+            }
         }
 
     }
