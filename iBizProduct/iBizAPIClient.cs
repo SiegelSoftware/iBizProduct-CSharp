@@ -165,7 +165,7 @@ namespace iBizProduct
                 { "productorder_id", ProductOrderId }
             };
 
-            return GetResult<Language>( "CommerceManager/ProductManager/ProductOrder", "ExternalGetOwnerLanguage", Params );
+            return GetResult<Language>( "CommerceManager/ProductManager/ProductOrder", "ExternalGetOwnerLanguage", Params, "language" );
         }
 
         /// <summary>
@@ -362,7 +362,17 @@ namespace iBizProduct
         private static T GetResult<T>( string Object, string Action, Dictionary<string, object> Params, string Key )
         {
             var result = GetResult( Object, Action, Params );
-            return ( T )Convert.ChangeType( result[ Key ], typeof( T ) );
+
+            var value = result[ Key ];
+
+            Type t = typeof( T );
+
+            if ( t.IsEnum )
+            {
+                return (T)Enum.Parse( t, value.ToString(), true );
+            }
+
+            return ( T )Convert.ChangeType( value, t );
         }
 
         private static T GetResult<T>( string Object, string Action, Dictionary<string, object> Params )
