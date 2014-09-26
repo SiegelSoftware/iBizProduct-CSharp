@@ -26,9 +26,9 @@ namespace iBizProduct
         public static string ApplicationName = "iBizProduct v3";
 
         /// <summary>
-        /// Settings File location. Default is in the MyDocuments folder of the user executing the application.
+        /// Settings File location. Default is in the UserProfile folder of the user executing the application.
         /// </summary>
-        public static string SettingsFile = string.Format( @"{0}\{1}", Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ), "ProductSettings.ibpv3" );
+        public static string SettingsFile = string.Format( @"{0}\{1}", Environment.GetFolderPath( Environment.SpecialFolder.UserProfile ), @"ProductSettings.ibpv3" );
 
         /// <summary>
         /// This contains the settings that iBizProduct has to work with. 
@@ -43,6 +43,9 @@ namespace iBizProduct
             ReadSettings();
         }
 
+        /// <summary>
+        /// Check to see if the code is currently executing in Elevated mode. 
+        /// </summary>
         public static bool IsElevated
         {
             get
@@ -58,6 +61,7 @@ namespace iBizProduct
         /// </summary>
         /// <param name="key">Settings Key</param>
         /// <param name="value">Settings Value</param>
+        /// <param name="encryption">Encryption type used.</param>
         public static void AddSetting( string key, string value, EncryptionType encryption = EncryptionType.None )
         {
             if( Settings == null || Settings.Count == 0 )
@@ -111,28 +115,8 @@ namespace iBizProduct
             catch( Exception ex )
             {
                 // This is most likely due to the application running without proper file permissions
-                iBizLog.WriteException( ex );
-            }
-        }
-
-        /// <summary>
-        /// Decrypts a setting
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="Setting"></param>
-        /// <param name="EncryptionType"></param>
-        /// <returns>Decrypted Setting</returns>
-        public static T DecryptSetting<T>( T Setting, EncryptionType EncryptionType )
-        {
-            switch( EncryptionType )
-            {
-                case Security.EncryptionType.None:
-                    return Setting;
-                case Security.EncryptionType.Base64:
-                    var Decoded = Encoding.UTF8.GetString( Convert.FromBase64String( Setting as string ) );
-                    return ( T )Convert.ChangeType( Decoded, typeof( T ) );
-                default:
-                    throw new iBizException( "The Encryption Type selected is not currently supported." );
+                //iBizLog.WriteException( ex );
+                Console.WriteLine( "Unable to write the file." );
             }
         }
 
@@ -201,7 +185,7 @@ namespace iBizProduct
             }
         }
 
-        //public static T GetRuntimeSetting<T>( string SettingName )
+        //public static T GetRuntimeSetting<T>( string SettingName, EncryptionType EncryptionType = EncryptionType.None )
         //{
         //    if( ProductContext == null )
         //    {
@@ -212,17 +196,17 @@ namespace iBizProduct
         //    var config = ProductContext.RuntimeConfigs.FirstOrDefault( rc => rc.Key == SettingName );
 
         //    if( config != null )
-        //        return ( T )Convert.ChangeType( config.Value, typeof( T ) );
+        //        return DecryptSetting<T>( config.Value, EncryptionType.None );
 
         //    var NullException = new NullReferenceException( string.Format( "There is currently no definition that {0} can use for: {1}.", ApplicationName, SettingName ) );
         //    throw new iBizException( string.Format( "{0} does not exist please check your environmental settings.", SettingName ), NullException );
         //}
 
-        //public static T GetRuntimeSetting<T>( string SettingName, T Default )
+        //public static T GetRuntimeSetting<T>( string SettingName, T Default, EncryptionType EncryptionType = EncryptionType.None )
         //{
         //    try
         //    {
-        //        return GetRuntimeSetting<T>( SettingName );
+        //        return GetRuntimeSetting<T>( SettingName, EncryptionType );
         //    }
         //    catch
         //    {
@@ -230,8 +214,15 @@ namespace iBizProduct
         //    }
         //}
 
-        private static T ConvertTo<T>( T Setting )
+        private static T ConvertTo<T>( string Setting )
         {
+            Type t = typeof( T );
+
+            if( t.IsEnum )
+            {
+                return ( T )Enum.Parse( t, Setting, true );
+            }
+
             return ( T )Convert.ChangeType( Setting, typeof( T ) );
         }
     }

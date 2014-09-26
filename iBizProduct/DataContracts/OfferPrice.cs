@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
 namespace iBizProduct.DataContracts
@@ -19,10 +15,10 @@ namespace iBizProduct.DataContracts
             this.AnnualPrice = Convert.ToDecimal( Response[ "price_a" ] );
         }
 
-        public decimal OnDemandPrice { get; set; }
-        public decimal MonthlyPrice { get; set; }
-        public decimal QuarterlyPrice { get; set; }
-        public decimal SemiAnnualPrice { get; set; }
-        public decimal AnnualPrice { get; set; }
+        public decimal? OnDemandPrice { get; set; }
+        public decimal? MonthlyPrice { get; set; }
+        public decimal? QuarterlyPrice { get; set; }
+        public decimal? SemiAnnualPrice { get; set; }
+        public decimal? AnnualPrice { get; set; }
     }
 }

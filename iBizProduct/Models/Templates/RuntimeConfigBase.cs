@@ -2,6 +2,7 @@
 // Author: Dan Siegel
 
 using System.ComponentModel.DataAnnotations;
+using iBizProduct.Security;
 
 namespace iBizProduct.Models.Templates
 {
@@ -10,5 +11,6 @@ namespace iBizProduct.Models.Templates
         [Key]
         public string Key { get; set; }
         public string Value { get; set; }
+        public EncryptionType EncryptionType { get; set; }
     }
 }

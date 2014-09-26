@@ -19,11 +19,168 @@ namespace iBizProduct
     public class iBizAPIClient
     {
         private static string ApiKey { get; set; }
+        public string SessionKey { get; private set; }
+        private DateTime TimeAuthenticated { get; set; }
+        public int AccountId { get; private set; }
+        public string Email { get; private set; }
+        public string Password { get; private set; }
 
         static iBizAPIClient()
         {
 
         }
+
+        #region Object context
+
+        /// <summary>
+        /// This will construct an iBizAPIClient object based on a service User. This requires that the 
+        /// environment has a settings for a service user. There must be values for "APIServiceUserId"
+        /// "APIServiceUserEmail", & "APIServiceUserPassword". If the password is stored as an environmental
+        /// setting and is not in the Settings file it must be encrypted using the Laravel encryption 
+        /// standard. This is for advanced users familiar with the iBizAPI only. The class will attempt to 
+        /// auto refresh the Session Key every 4 hours if the instantiation exists for longer than that period of time. 
+        /// </summary>
+        public iBizAPIClient()
+        {
+            this.AccountId = SettingsBase.GetSetting<int>( "APIServiceUserId", 0 );
+            this.Email = SettingsBase.GetSetting<string>( "APIServiceUserEmail", "" );
+            this.Password = SettingsBase.GetSetting<string>( "APIServiceUserPassword", "" );
+
+            if( !String.IsNullOrEmpty( this.Email ) || !String.IsNullOrEmpty( this.Password ) || this.AccountId > 0 )
+                this.Authenticate();
+        }
+
+        /// <summary>
+        /// This will construct an iBizAPIClient object based on a service User. This requires the 
+        /// fully qualified username and password. This is for advanced users familiar with the 
+        /// iBizAPI only. The class will attempt to auto refresh the Session Key every 4 hours if the 
+        /// instantiation exists for longer than that period of time. 
+        /// </summary>
+        /// <param name="UserName">Fully Qualified User Name ( #1234:some@user.com )</param>
+        /// <param name="Password">Password of the user account</param>
+        public iBizAPIClient( string UserName, string Password )
+        {
+            var user = UserName.Split( ':' );
+            this.AccountId = int.Parse( user[ 0 ].Substring( 1 ) );
+            this.Email = user[ 1 ];
+            this.Password = Password;
+
+            this.Authenticate();
+        }
+
+        /// <summary>
+        /// This will construct an iBizAPIClient object based on a service User. This requires the 
+        /// user account id, email and password. This is for advanced users familiar with the 
+        /// iBizAPI only. The class will attempt to auto refresh the Session Key every 4 hours if the 
+        /// instantiation exists for longer than that period of time. 
+        /// </summary>
+        /// <param name="AccountNumber">Account Number of the User Account</param>
+        /// <param name="Email">Email of the User Account</param>
+        /// <param name="Password">Password of the User Account</param>
+        public iBizAPIClient( int AccountNumber, string Email, string Password )
+        {
+            this.AccountId = AccountNumber;
+            this.Email = Email;
+            this.Password = Password;
+
+            this.Authenticate();
+        }
+
+        private void Authenticate( bool SuppressExceptions = true )
+        {
+            if( String.IsNullOrEmpty( this.Email ) || String.IsNullOrEmpty( this.Password ) || this.AccountId < 1 )
+                throw new iBizException( "We are unable to authenticate against the backend API because the Credentials seem to be missing." );
+
+            try
+            {
+                Dictionary<string, object> Params = new Dictionary<string, object>()
+                {
+                    { "account_id", this.AccountId },
+                    { "email", this.Email },
+                    { "password", this.Password }
+                };
+                var Authentication = GetResult( "JSON/AccountManager/AAA", "Authenticate", Params );
+            }
+            catch( Exception ex )
+            {
+                if( !SuppressExceptions )
+                    throw ex;
+            }
+        }
+
+        private bool IsStillValidSession()
+        {
+            if( TimeAuthenticated != null )
+                return TimeAuthenticated.AddHours( 4 ) < DateTime.Now;
+            else
+                return false;
+        }
+
+        private void VerifySessionKey()
+        {
+            if( !IsStillValidSession() )
+            {
+                Authenticate( false );
+            }
+        }
+
+        private void ParamInjector( bool InjectSessionKey, bool InjectAccountId, ref Dictionary<string, object> Params )
+        {
+            if( InjectAccountId )
+                Params.Add( "account_id", AccountId );
+            if( InjectSessionKey )
+                Params.Add( "session_key", SessionKey );
+        }
+
+        /// <summary>
+        /// This method allows for Advanced users to query directly against ANY backend API endpoint using any object that they may exist on the Backend.
+        /// </summary>
+        /// <param name="Object">Backend API Object to call</param>
+        /// <param name="Action">Backend Action to perform</param>
+        /// <param name="Params">Parameter Object to pass to the backend.</param>
+        /// <param name="InjectSessionKey">[OPTIONAL] If set to true this will inject the Session Key into Param list. This is true by default.</param>
+        /// <param name="InjectAccountId">[OPTIONAL] If set to true this will inject the Account id into the Param list. This is false by default.</param>
+        /// <returns>iBizAPIResponseObject as recieved by the backend.</returns>
+        public JObject QueryBackend( string Object, string Action, Dictionary<string, object> Params, bool InjectSessionKey = true, bool InjectAccountId = false )
+        {
+            VerifySessionKey();
+            ParamInjector( InjectSessionKey, InjectAccountId, ref Params );
+            return GetResult( Object, Action, Params );
+        }
+
+        /// <summary>
+        /// This method allows for Advanced users to query directly against ANY backend API endpoint using any object that they may exist on the Backend.
+        /// </summary>
+        /// <typeparam name="T">Type to Return</typeparam>
+        /// <param name="Object">Backend API Object to call</param>
+        /// <param name="Action">Backend Action to perform</param>
+        /// <param name="Params">Parameter Object to pass to the backend.</param>
+        /// <param name="InjectSessionKey">[OPTIONAL] If set to true this will inject the Session Key into Param list. This is true by default.</param>
+        /// <param name="InjectAccountId">[OPTIONAL] If set to true this will inject the Account id into the Param list. This is false by default.</param>
+        /// <returns>Type to Return</returns>
+        public T QueryBackend<T>( string Object, string Action, Dictionary<string, object> Params, bool InjectSessionKey = true, bool InjectAccountId = false )
+        {
+            return ( T )Convert.ChangeType( QueryBackend( Object, Action, Params, InjectSessionKey, InjectAccountId ), typeof( T ) );
+        }
+
+        /// <summary>
+        /// This method allows for Advanced users to query directly against ANY backend API endpoint using any object that they may exist on the Backend.
+        /// </summary>
+        /// <typeparam name="T">Type to Return</typeparam>
+        /// <param name="Object">Backend API Object to call</param>
+        /// <param name="Action">Backend Action to perform</param>
+        /// <param name="Params">Parameter Object to pass to the backend.</param>
+        /// <param name="ReturnKey">Response Object Key</param>
+        /// <param name="InjectSessionKey">[OPTIONAL] If set to true this will inject the Session Key into Param list. This is true by default.</param>
+        /// <param name="InjectAccountId">[OPTIONAL] If set to true this will inject the Account id into the Param list. This is false by default.</param>
+        /// <returns>Value of the Return Key as the Type requested.</returns>
+        public T QueryBackend<T>( string Object, string Action, Dictionary<string, object> Params, string ReturnKey, bool InjectSessionKey = true, bool InjectAccountId = false )
+        {
+            var response = QueryBackend( Object, Action, Params, InjectSessionKey, InjectAccountId );
+            return ( T )Convert.ChangeType( response[ ReturnKey ], typeof( T ) );
+        }
+
+        #endregion
 
         #region CommerceManager/ProductManager/ProductOrder
 
@@ -43,7 +200,8 @@ namespace iBizProduct
 
             VerifyExternalKey();
 
-            Dictionary<string, object> Params = new Dictionary<string, object>() {
+            Dictionary<string, object> Params = new Dictionary<string, object>() 
+            {
                 { "external_key", ApiKey },
                 { "product_id", ProductId },
                 { "productorder_spec", ProductOrderSpec.OrderSpec() }
@@ -62,7 +220,8 @@ namespace iBizProduct
         {
             VerifyExternalKey();
 
-            Dictionary<string, object> Params = new Dictionary<string, object>() {
+            Dictionary<string, object> Params = new Dictionary<string, object>() 
+            {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
                 { "productorder_spec", productOrderSpec.OrderSpec() }
@@ -81,7 +240,8 @@ namespace iBizProduct
         {
             VerifyExternalKey();
 
-            Dictionary<string, object> Params = new Dictionary<string, object>() {
+            Dictionary<string, object> Params = new Dictionary<string, object>() 
+            {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
             };
@@ -266,14 +426,23 @@ namespace iBizProduct
 
         #region CommerceManager/ProductOffer
 
-        public static OfferPrice GetPriceByOffer( int OfferId, bool Markup = false, int AccountId = 0 )
+        public static OfferPrice GetPriceByOffer( int OfferId, decimal OrderCost, bool MarkDown = false, int AccountId = 0 )
         {
             VerifyExternalKey();
+
+            var InfoToReturn = new Dictionary<string, object>()
+            { 
+                { "order_cost", OrderCost }
+            };
+
+            if( MarkDown )
+                InfoToReturn.Add( "mark_down", MarkDown );
 
             // Need Backend to accept Markup Flag
             Dictionary<string, object> Params = new Dictionary<string, object>() {
                 { "external_key", iBizProductSettings.ExternalKey },
-                { "productoffer_id", OfferId }
+                { "productoffer_id", OfferId },
+                { "info_to_return", InfoToReturn }
             };
 
             if( AccountId > 0 ) Params.Add( "account_id", AccountId );
