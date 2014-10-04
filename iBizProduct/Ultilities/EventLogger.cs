@@ -1,9 +1,11 @@
 ﻿// Copyright (c) iBizVision - 2014
 // Author: Dan Siegel
 
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Principal;
@@ -11,10 +13,19 @@ using System.Security.Principal;
 namespace iBizProduct.Ultilities
 {
     /// <summary>
-    /// Provides a wrapper class for the EventLog. This allows for quick and easy 
+    /// Provides a wrapper class for the EventLog. This allows for quick and easy event logging.
+    /// Notes on EventLog handling, windows Event Viewer does not actually read a folder structure
+    /// where Custom EventLogs have been created but rather it renders a list of EventLogs, where
+    /// their display name can become a folder like structure.
+    /// a EventLog whose display name is: iBizProduct-MyProduct-MyCustomLog
+    /// Would be rendered as:
+    /// -iBizProduct
+    ///     -MyProduct
+    ///         MyCustomLog
     /// </summary>
     public class EventLogger
     {
+        private const string RootDisplayLogName = "iBizProduct";
         static EventLogger Logger;
         public EventLog Log;
         private string[] Email;
@@ -40,12 +51,15 @@ namespace iBizProduct.Ultilities
 
         public EventLogger( string[] EmailList, string LogSource, string LogName = "Operational" )
         {
-            this.Email = Email;
+            this.Email = EmailList;
 
             // Check to see if the iBizProduct v3 folder exists... create it if it does not exist
-
+            if ( !Directory.Exists( @"c:\iBizProductv3" ) )
+            {
+                Directory.CreateDirectory( @"c:\iBizProductv3" );
+            }
             // Check to see if the LogSource folder exists... create it if it does not exist
-
+            // Update:↑ LogSource folder doesn't exist is just the way EventViewer renders the display name of the EventLog.
         }
 
         /// <summary>
@@ -92,7 +106,10 @@ namespace iBizProduct.Ultilities
 
         public static bool SetupLogs( string ProductName, string LogName )
         {
-            return false;
+            if ( EventLog.SourceExists( RootDisplayLogName + "-" + ProductName + "-" + LogName ) )
+                return false;
+            else
+                return true;
         }
 
         /// <summary>
@@ -108,8 +125,58 @@ namespace iBizProduct.Ultilities
             {
                 if( !SetupLogs( Log.Key, Log.Value ) )
                     return false;
+                else
+                {
+                    if ( !EventLog.Exists( Log.Key + "-" + Log.Value, "." ) )
+                    {                       
+                        EventLog.CreateEventSource( Log.Key, RootDisplayLogName + "-" +Log.Value + "-" + Log.Key );
+                        ModifyRegistryStructure( RootDisplayLogName + "-" + Log.Value + "-" + Log.Key );
+                    }
+                }
             }
             return true;
+        }
+
+        private static void ModifyRegistryStructure( string LogName )
+        {
+            var PublisherGuid = CreateNewPublisher( LogName );
+            LinkChannels( LogName, PublisherGuid );
+        }
+
+        private static void LinkChannels( string LogName, string PublisherGuid )
+        {
+            RegistryKey LocalMachineRegistry = Registry.LocalMachine;
+            var Channels = LocalMachineRegistry.OpenSubKey( "Software/Microsoft/Windows/CurrentVersion/WINEVT/Channels" );
+            Channels.CreateSubKey(LogName + "/Operational");
+
+            // Modify isolation level
+            // Enabled 1
+            // Isolation 0 
+            // OwningPublisher
+            // Type 1
+        }
+
+        private static string CreateNewPublisher( string LogName )
+        {
+            RegistryKey LocalMachineRegistry = Registry.LocalMachine;
+            var PublishersKey = LocalMachineRegistry.OpenSubKey("Software/Microsoft/Windows/CurrentVersion/WINEVT/Publishers");
+            // Add new publisher
+            string PublisherGuid = "{" + Guid.NewGuid().ToString() + "}";
+            PublishersKey.CreateSubKey( PublisherGuid );
+            // Add ChannelReferences subkey and MessageFileName
+            var NewPublisher = PublishersKey.OpenSubKey(PublisherGuid);//Open the new publisher
+            NewPublisher.SetValue( "MessageFileName", @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\EventLogMessages.dll", RegistryValueKind.ExpandString );
+            NewPublisher.SetValue( "ResourceFileName", @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\EventLogMessages.dll", RegistryValueKind.ExpandString );
+            NewPublisher.CreateSubKey( "ChannelReferences" );
+            // Add Count
+            var ChannelReferences = NewPublisher.OpenSubKey( "ChannelReferences" );
+            ChannelReferences.SetValue("Count", 1 , RegistryValueKind.DWord);
+            ChannelReferences.CreateSubKey("0");
+            // Add single Channel reference
+            var SingleChannelReference = ChannelReferences.OpenSubKey("0");
+            SingleChannelReference.SetValue( "", LogName + "/Operational" );//modify default value
+
+            return PublisherGuid;
         }
 
         /// <summary>
@@ -136,6 +203,11 @@ namespace iBizProduct.Ultilities
 
                 SmtpClient.Send( mail );
             }
+        }
+
+        public void CreatePublisherKey(string[] Channels)
+        {
+            
         }
     }
 }
