@@ -106,10 +106,23 @@ namespace iBizProduct.Ultilities
 
         public static bool SetupLogs( string ProductName, string LogName )
         {
-            if ( EventLog.SourceExists( RootDisplayLogName + "-" + ProductName + "-" + LogName ) )
-                return false;
-            else
-                return true;
+            if (!ProductName.Equals(RootDisplayLogName))// If it is not the library's default log
+            {
+                if ( EventLog.SourceExists( RootDisplayLogName + "-" + ProductName + "-" + LogName ) )
+                    return false;// Nope, can't set up it exists already.
+                else
+                {
+                    EventLog.CreateEventSource( ProductName, RootDisplayLogName + "-" + ProductName + "-" + LogName );
+                    ModifyRegistryStructure( RootDisplayLogName + "-" + ProductName + "-" + LogName );
+                }                
+            }
+            else // Set up the default log for the library
+            {
+                if ( !EventLog.SourceExists( ProductName ) )
+                    EventLog.CreateEventSource( ProductName, RootDisplayLogName + "-" + LogName );
+                ModifyRegistryStructure( RootDisplayLogName + "-" + LogName );
+            }
+            return true;
         }
 
         /// <summary>
@@ -127,11 +140,7 @@ namespace iBizProduct.Ultilities
                     return false;
                 else
                 {
-                    if ( !EventLog.Exists( Log.Key + "-" + Log.Value, "." ) )
-                    {                       
-                        EventLog.CreateEventSource( Log.Key, RootDisplayLogName + "-" +Log.Value + "-" + Log.Key );
-                        ModifyRegistryStructure( RootDisplayLogName + "-" + Log.Value + "-" + Log.Key );
-                    }
+                    //Log was created successfuly
                 }
             }
             return true;
@@ -146,37 +155,103 @@ namespace iBizProduct.Ultilities
         private static void LinkChannels( string LogName, string PublisherGuid )
         {
             RegistryKey LocalMachineRegistry = Registry.LocalMachine;
-            var Channels = LocalMachineRegistry.OpenSubKey( "Software/Microsoft/Windows/CurrentVersion/WINEVT/Channels" );
-            Channels.CreateSubKey(LogName + "/Operational");
+            var Channels = LocalMachineRegistry.OpenSubKey( "Software/Microsoft/Windows/CurrentVersion/WINEVT/Channels", true );
+            Channels.CreateSubKey( LogName + "/Operational" );
+            var Channel = Channels.OpenSubKey( LogName + "/Operational", true );
 
             // Modify isolation level
+            Channel.SetValue( "Isolation", 0, RegistryValueKind.DWord );
             // Enabled 1
-            // Isolation 0 
+            Channel.SetValue( "Enabled", 1, RegistryValueKind.DWord );
             // OwningPublisher
-            // Type 1
+            Channel.SetValue( "OwningPublisher", PublisherGuid, RegistryValueKind.ExpandString );
+            // Type 
+            // 0 Admin
+            // 1 Operational
+            // 2 Analytic
+            // 3 Debug
+            Channel.SetValue( "Type", 0, RegistryValueKind.DWord );
+        }
+
+        private static RegistryKey OpenRegistry( String path, RegistryKey? root )
+        {
+            string NextSubKey = path.Substring( 0, path.IndexOf( "/" ) );
+            RegistryKey NextKey = null;
+
+            /**
+             * Needs fixing... the idea is to consume all of the path string or open up all of the available keys down to the one we need.
+             * **/
+            if (path.Length > 1)
+            {
+                if ( root.HasValue )
+                {
+                    NextKey = root.Value.OpenSubKey( NextSubKey, true );
+                    NextKey = OpenRegistry( path.Substring( path.IndexOf( "/" ), path.Length - path.IndexOf( "/" ) ), NextKey );//trim right side of /
+                }
+                else
+                {
+                    RegistryKey RootKey = Registry.LocalMachine;
+                    NextKey = RegistryKey.OpenBaseKey( RegistryHive.LocalMachine, RegistryView.Registry64 ).OpenSubKey( NextSubKey );
+                    NextKey = OpenRegistry( path.Substring( path.IndexOf( "/" ), path.Length - path.IndexOf( "/" ) ), NextKey );
+                }
+            }
+            
+
+            return NextKey;
         }
 
         private static string CreateNewPublisher( string LogName )
         {
             RegistryKey LocalMachineRegistry = Registry.LocalMachine;
-            var PublishersKey = LocalMachineRegistry.OpenSubKey("Software/Microsoft/Windows/CurrentVersion/WINEVT/Publishers");
+            //var PublishersKey = RegistryKey.OpenBaseKey( RegistryHive.LocalMachine, RegistryView.Registry64 ).OpenSubKey( "SOFTWARE" ); // as funny as it is, it won't allow to open the key with the whole path
+            //PublishersKey = PublishersKey.OpenSubKey( "Microsoft" );
+            //PublishersKey = PublishersKey.OpenSubKey( "Windows" );
+            //PublishersKey = PublishersKey.OpenSubKey( "CurrentVersion" );
+            //PublishersKey = PublishersKey.OpenSubKey( "WINEVT" );
+            //PublishersKey = PublishersKey.OpenSubKey( "Publishers", true );
+            var PublishersKey = OpenRegistry("SOFTWARE/Microsoft/CurrentVersion/WINEVT/Publishers");
+            /*
+             * RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey("SOFTWARE")
+             */
+
             // Add new publisher
             string PublisherGuid = "{" + Guid.NewGuid().ToString() + "}";
             PublishersKey.CreateSubKey( PublisherGuid );
             // Add ChannelReferences subkey and MessageFileName
-            var NewPublisher = PublishersKey.OpenSubKey(PublisherGuid);//Open the new publisher
-            NewPublisher.SetValue( "MessageFileName", @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\EventLogMessages.dll", RegistryValueKind.ExpandString );
-            NewPublisher.SetValue( "ResourceFileName", @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\EventLogMessages.dll", RegistryValueKind.ExpandString );
+            var NewPublisher = PublishersKey.OpenSubKey( PublisherGuid, true );//Open the new publisher
+            NewPublisher.SetValue( "MessageFileName", GetFrameworkPath() + @"\EventLogMessages.dll", RegistryValueKind.ExpandString );
+            NewPublisher.SetValue( "ResourceFileName", GetFrameworkPath() + @"\EventLogMessages.dll", RegistryValueKind.ExpandString );
             NewPublisher.CreateSubKey( "ChannelReferences" );
             // Add Count
-            var ChannelReferences = NewPublisher.OpenSubKey( "ChannelReferences" );
-            ChannelReferences.SetValue("Count", 1 , RegistryValueKind.DWord);
-            ChannelReferences.CreateSubKey("0");
+            var ChannelReferences = NewPublisher.OpenSubKey( "ChannelReferences", true );
+            ChannelReferences.SetValue( "Count", 1, RegistryValueKind.DWord );
+            ChannelReferences.CreateSubKey( "0" );
             // Add single Channel reference
-            var SingleChannelReference = ChannelReferences.OpenSubKey("0");
+            var SingleChannelReference = ChannelReferences.OpenSubKey( "0", true );
             SingleChannelReference.SetValue( "", LogName + "/Operational" );//modify default value
 
             return PublisherGuid;
+        }
+
+        private static string GetFrameworkPath()
+        {
+            // This is the location of the .Net Framework Registry Key
+            string framworkRegPath = @"Software\Microsoft\.NetFramework";
+
+            // Get a non-writable key from the registry
+            RegistryKey netFramework = Registry.LocalMachine.OpenSubKey( framworkRegPath, false );
+
+            // Retrieve the install root path for the framework
+            string installRoot = netFramework.GetValue( "InstallRoot" ).ToString();
+
+            // Retrieve the version of the framework executing this program
+            string version = string.Format( @"v{0}.{1}.{2}\",
+              Environment.Version.Major,
+              Environment.Version.Minor,
+              Environment.Version.Build );
+
+            // Return the path of the framework
+            return System.IO.Path.Combine( installRoot, version );
         }
 
         /// <summary>
