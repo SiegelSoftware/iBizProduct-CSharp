@@ -214,7 +214,7 @@ namespace iBizProduct
         //    }
         //}
 
-        private static T ConvertTo<T>( string Setting )
+        public static T ConvertTo<T>( string Setting )
         {
             Type t = typeof( T );
 

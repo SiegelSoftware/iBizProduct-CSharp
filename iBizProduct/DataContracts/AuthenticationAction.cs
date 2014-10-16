@@ -1,4 +1,6 @@
-﻿
+﻿// Copyright (c) iBizVision - 2014
+// Author: Dan Siegel
+
 namespace iBizProduct.DataContracts
 {
     /// <summary>
@@ -24,6 +26,11 @@ namespace iBizProduct.DataContracts
         /// <summary>
         /// Edit/Manage the Product
         /// </summary>
-        PRODUCT
+        PRODUCT,
+
+        /// <summary>
+        /// View the FAQs
+        /// </summary>
+        FAQ
     }
 }

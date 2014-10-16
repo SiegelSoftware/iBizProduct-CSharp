@@ -40,6 +40,7 @@ namespace iBizProduct.DataContracts
 
         /// <summary>
         /// [ REQUIRED ] The priority of the case ("LOW", "MEDIUM", "HIGH"). 
+        /// Default: Medium
         /// </summary>
         [DefaultValue( Priority.MEDIUM )]
         public Priority Priority { get; set; }

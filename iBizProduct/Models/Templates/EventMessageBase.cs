@@ -14,7 +14,7 @@ namespace iBizProduct.Models.Templates
         /// The Event Message Id
         /// </summary>
         [DatabaseGenerated( DatabaseGeneratedOption.Identity )]
-        public T EventMessageId { get; set; }
+        public T EventMessageId { get; }
 
         /// <summary>
         /// The associated Event Id
@@ -35,6 +35,6 @@ namespace iBizProduct.Models.Templates
         /// The time of the message.
         /// </summary>
         [DatabaseGenerated( DatabaseGeneratedOption.Computed )]
-        public DateTime Time { get; set; }
+        public DateTime Time { get; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) iBizVision - 2014
 // Author: Dan Siegel
 
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using iBizProduct.DataContracts;
 
@@ -21,6 +22,7 @@ namespace iBizProduct.Models.Templates
         /// <summary>
         /// FAQ ElementLanguage
         /// </summary>
+        [DefaultValue( Language.EN )]
         public Language DefaultLanguage { get; set; }
     }
 }
