@@ -384,9 +384,12 @@ namespace iBizProduct
             {
                 { "external_key", ApiKey },
                 { "productorder_id", ProductOrderId },
-                { "case_id", CaseId },
-                { "case_spec", CaseSpec.GetSpec() }
+                { "case_id", CaseId }
             };
+
+            var CaseSpecifics = CaseSpec.GetSpec();
+            CaseSpecifics.Remove( "type" ); //the type cannot be changed when updating
+            Params.Add( "case_spec", CaseSpecifics );
 
             return GetResult<int>( "CommerceManager/ProductManager/ProductOrder", "ExternalUpdateCaseWithOwner", Params, "effected_rows" );
         }

@@ -71,7 +71,7 @@ namespace iBizProduct.DataContracts
         /// <returns>Dictionary spec based on how the object has been built.</returns>
         public Dictionary<string, object> GetSpec()
         {
-            if( !( String.IsNullOrEmpty( Detail ) || String.IsNullOrEmpty( InternalNotes ) ) ) throw new iBizException( "You must specificy either a case detail or internal notes." );
+            if( ( String.IsNullOrEmpty( Detail ) && String.IsNullOrEmpty( InternalNotes ) ) ) throw new iBizException( "You must specificy either a case detail or internal notes." );
             if( !AutoClose && ReturnHours < 1 ) throw new iBizException( "If AutoClose is disabled you must specify the number of hours in which to have the case returned." );
 
             var spec = new Dictionary<string, object>()
