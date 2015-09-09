@@ -8,6 +8,9 @@ using System.Web;
 using iBizProduct.DataContracts;
 using iBizProduct.Ultilities;
 using Newtonsoft.Json.Linq;
+using System.Net;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace iBizProduct
 {
@@ -529,6 +532,265 @@ namespace iBizProduct
                 throw new iBizException( "Your Products External Key was not found or is not accessible. Please verify that the key is set in the AppSettings " +
                                             "section of your config file. You can find the Product External Key in the Panel under the External Attributes section " +
                                             "of the ProductEdit page.", new SettingsPropertyNotFoundException( "The setting you are looking for is not available or does not exist within the current scope of the application. Please refer to the setup documentation for required systems configurations." ) );
+        }
+
+        /// <summary>
+        /// Get the translation for the specific phrase from the translation API web service (For the translation API URL it will take the value stored in the environment variables)
+        /// </summary>
+        /// <param name="ProductOrderId">Id of the product order to identify the correct language for this order</param>
+        /// <param name="PhraseKey">The Key or the Id of the phrase to translate</param>        
+        /// <param name="vendorId">(Optional) Id of the vendor the phrase belongs to</param>
+        /// <returns>The translated phrase according to the language registered for the order (It returns a translation in en_US if there are no valid languages found for that order)</returns>
+        public static string GetPhraseTranslation( int ProductOrderId, string PhraseKey, string vendorId = null )
+        {
+                string language;
+                try
+                {
+                        language = GetOwnerLanguage( ProductOrderId ).ToString();
+                }
+                catch
+                {
+                        language = "EN";
+                }
+                return getCallTranslationAPI( PhraseKey, language, vendorId );
+        }
+
+
+
+        /// <summary>
+        /// Get the translation for the specific phrase from the translation API web service (For the translation API URL it will take the value stored in the environment variables)
+        /// </summary>
+        /// <param name="targetLanguage">Language to which the phrase will be translated</param>
+        /// <param name="PhraseKey">The Key or the Id of the phrase to translate</param>        
+        /// /// <param name="vendorId">(Optional) Id of the vendor the phrase belongs to</param>
+        /// <returns>The translated phrase according to the language registered for the order (It returns a translation in en_US if there are no valid languages found for that order)</returns>
+        public static string GetPhraseTranslation( Language targetLanguage, string PhraseKey, string vendorId = null )
+        {
+                string language;
+                try
+                {
+                        language = targetLanguage.ToString();
+                }
+                catch
+                {
+                        language = "EN";
+                }
+                return getCallTranslationAPI( PhraseKey, language, vendorId );
+        }
+
+        /// <summary>
+        /// Get the translation for the specific phrase from the translation API web service (For the translation API URL it will take the value stored in the environment variables)
+        /// </summary>
+        /// <param name="ProductOrderId">Id of the product order to identify the correct language for this order</param>
+        /// <param name="PhraseKey">The Key or the Id of the phrase to translate</param>
+        /// <param name="replaceValues">Array of values used to replace the corresponding tags in the response string</param>
+        /// /// <param name="vendorId">(Optional) Id of the vendor the phrase belongs to</param>
+        /// <returns>The translated phrase according to the language registered for the order (It returns a translation in en_US if there are no valid languages found for that order)</returns>
+        public static string GetPhraseTranslation( int ProductOrderId, string PhraseKey, List<string> replaceValues, string vendorId = null )
+        {
+                string language;
+                try
+                {
+                        language = GetOwnerLanguage( ProductOrderId ).ToString();
+                }
+                catch
+                {
+                        language = "EN";
+                }
+                return postCallTranslationAPI( PhraseKey, language, replaceValues, vendorId );
+        }
+
+        /// <summary>
+        /// Get the translation for the specific phrase from the translation API web service (For the translation API URL it will take the value stored in the environment variables)
+        /// </summary>
+        /// <param name="targetLanguage">Language to which the phrase will be translated</param>
+        /// <param name="PhraseKey">The Key or the Id of the phrase to translate</param>
+        /// <param name="replaceValues">Array of values used to replace the corresponding tags in the response string</param>
+        /// /// <param name="vendorId">(Optional) Id of the vendor the phrase belongs to</param>
+        /// <returns>The translated phrase according to the language registered for the order (It returns a translation in en_US if there are no valid languages found for that order)</returns>
+        public static string GetPhraseTranslation( Language targetLanguage, string PhraseKey, List<string> replaceValues, string vendorId = null )
+        {
+                string language;
+                try
+                {
+                        language = targetLanguage.ToString();
+                }
+                catch
+                {
+                        language = "EN";
+                }
+                return postCallTranslationAPI( PhraseKey, language, replaceValues, vendorId );
+
+        }
+
+        /// <summary>
+        /// Get the translation for the specific phrase from the translation API web service (For the translation API URL it will take the value stored in the environment variables)
+        /// </summary>
+        /// <param name="ProductOrderId">ID of the product order to identify the correct language for this order</param>
+        /// <param name="PhraseKey">The Key or the Id of the phrase to translate</param>
+        /// <param name="replacePairs">List of specific orginal and new values to replace in the response string</param>
+        /// /// <param name="vendorId">(Optional) Id of the vendor the phrase belongs to</param>
+        /// <returns>The translated phrase according to the language registered for the order (It returns a translation in en_US if there are no valid languages found for that order)</returns>
+        public static string GetPhraseTranslation( int ProductOrderId, string PhraseKey, Dictionary<string, string> replacePairs, string vendorId = null )
+        {
+                string language;
+                try
+                {
+                        language = GetOwnerLanguage( ProductOrderId ).ToString();
+                }
+                catch
+                {
+                        language = "EN";
+                }
+                return postCallTranslationAPI( PhraseKey, language, replacePairs, vendorId );
+        }
+
+        /// <summary>
+        /// Get the translation for the specific phrase from the translation API web service (For the translation API URL it will take the value stored in the environment variables)
+        /// </summary>
+        /// <param name="PhraseKey">The Key or the Id of the phrase to translate</param>
+        /// <param name="targetLanguage">Language to which the phrase will be translated</param>
+        /// <param name="replacePairs">List of specific orginal and new values to replace in the response string</param>
+        /// /// <param name="vendorId">(Optional) Id of the vendor the phrase belongs to</param>
+        /// <returns>The translated phrase according to the language registered for the order (It returns a translation in en_US if there are no valid languages found for that order)</returns>
+        public static string GetPhraseTranslation( Language targetLanguage, string PhraseKey, Dictionary<string, string> replacePairs, string vendorId = null )
+        {
+                string language;
+
+                try
+                {
+                        language = targetLanguage.ToString();
+                }
+                catch
+                {
+                        language = "EN";
+                }
+                return postCallTranslationAPI( PhraseKey, language, replacePairs, vendorId );
+        }
+
+        private static string postCallTranslationAPI( string PhraseKey, string language, object replace, string vendorId = null )
+        {
+                string resultJson, requestURL;
+                requestURL = buildTranslationURL( PhraseKey, language, vendorId, false );
+
+                var request = WebRequest.Create( requestURL );
+                ServicePointManager.ServerCertificateValidationCallback += ( sender, cert, chain, sslPolicyErrors ) => true;
+                request.ContentType = "application/json";
+                request.Method = "POST";
+                try
+                {
+                        using ( var streamWriter = new StreamWriter( request.GetRequestStream() ) )
+                        {
+                                var json = JsonConvert.SerializeObject( replace );
+                                streamWriter.Write( json );
+                                streamWriter.Flush();
+                                streamWriter.Close();
+                        }
+                        var response = ( HttpWebResponse )request.GetResponse();
+                        using ( var streamReader = new StreamReader( response.GetResponseStream() ) )
+                        {
+                                resultJson = streamReader.ReadToEnd();
+                        }
+                        return ParseTranslationResponse( resultJson );
+                }
+                catch ( Exception ex )
+                {
+                        throw new iBizException( ex.Message );
+                }
+        }
+
+
+        private static string getCallTranslationAPI( string PhraseKey, string language, string vendorId = null )
+        {
+                string resultJson, requestURL;
+                requestURL = buildTranslationURL( PhraseKey, language, vendorId, true );
+
+                var request = WebRequest.Create( requestURL );
+                ServicePointManager.ServerCertificateValidationCallback += ( sender, cert, chain, sslPolicyErrors ) => true;
+                request.ContentType = "application/json";
+                try
+                {
+                        var response = ( HttpWebResponse )request.GetResponse();
+
+                        using ( var sr = new StreamReader( response.GetResponseStream() ) )
+                        {
+                                resultJson = sr.ReadToEnd();
+                        }
+                        return ParseTranslationResponse( resultJson );
+
+                }
+                catch ( Exception ex )
+                {
+                        throw new iBizException( ex.Message );
+                }
+        }
+
+        private static string buildTranslationURL( string PhraseKey, string language, string vendorId, bool isGet )
+        {
+                string targetPhrase, translationURL, requestURL;
+                string protocol = SettingsBase.GetSetting<string>( "DevApiProtocol" );
+                string backend = SettingsBase.GetSetting<string>( "DevAPIHost" );
+                targetPhrase = PhraseKey + "?locale=" + language;
+                try
+                {
+                        translationURL = SettingsBase.GetSetting<string>( "TranslationURL" );
+                }
+                catch
+                {
+                        translationURL = backend;
+                }
+                if ( string.IsNullOrEmpty( translationURL ) )
+                {
+                        if ( backend.Contains( "beta" ) )
+                        {
+                                translationURL = "dev.ibiztest.net";
+                        }
+                        else
+                        {
+                                translationURL = "backend.ibizapi.com";
+                        }
+                }
+                translationURL = protocol + translationURL;
+                if ( !string.IsNullOrEmpty( vendorId ) )
+                {
+                        if ( isGet )
+                        {
+                                requestURL = string.Format( "{0}/iBiz/Translation/Vendor/{2}/Phrase/{1}", translationURL, targetPhrase, vendorId );
+                        }
+                        else
+                        {
+                                requestURL = string.Format( "{0}/iBiz/Translation/Parser/Vendor/{2}/Phrase/{1}", translationURL, targetPhrase, vendorId );
+                        }
+                }
+                else
+                {
+                        if ( isGet )
+                        {
+                                requestURL = string.Format( "{0}/iBiz/Translation/Phrase/{1}", translationURL, targetPhrase );
+                        }
+                        else
+                        {
+                                requestURL = string.Format( "{0}/iBiz/Translation/Parser/Phrase/{1}", translationURL, targetPhrase );
+                        }
+                }
+                return requestURL;
+        }
+
+        private static string ParseTranslationResponse( string resultJson )
+        {
+                if ( string.IsNullOrEmpty( resultJson ) )
+                        throw new iBizException( "Error: Empty response" );
+                JArray jObject = JArray.Parse( resultJson );
+                if ( jObject.Count > 0 && jObject[0]["locales"] != null && jObject[0]["locales"].HasValues )
+                {
+                        dynamic locale = jObject[0]["locales"][0];
+                        string result = locale.content;
+                        return result;
+                }
+                else
+                {
+                        return string.Empty;
+                }
         }
 
         private static T GetResult<T>( string Object, string Action, Dictionary<string, object> Params, string Key )
